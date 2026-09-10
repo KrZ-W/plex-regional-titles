@@ -47,7 +47,7 @@ class Settings:
     plex_verify_ssl: bool = True
     plex_timeout: int = 60
     regie_url: str = REGIE_DEFAULT_URL
-    regie_original_title_confirmation: bool = True
+    regie_original_title_confirmation: bool = False
     imdb_akas_url: str = IMDB_AKAS_DEFAULT_URL
 
     @property
@@ -77,6 +77,10 @@ class Settings:
     @property
     def last_run_file(self) -> Path:
         return self.state_dir / "last-run.json"
+
+    @property
+    def would_apply_file(self) -> Path:
+        return self.state_dir / "would-apply.csv"
 
     @property
     def run_once(self) -> bool:
@@ -184,6 +188,6 @@ def load_settings(env: dict[str, str] | None = None, known_sources: set[str] | N
         plex_verify_ssl=_bool(e.get("PLEX_VERIFY_SSL", "true")),
         plex_timeout=plex_timeout,
         regie_url=e.get("REGIE_DATASET_URL", REGIE_DEFAULT_URL).strip() or REGIE_DEFAULT_URL,
-        regie_original_title_confirmation=_bool(e.get("REGIE_ORIGINAL_TITLE_CONFIRMATION", "true")),
+        regie_original_title_confirmation=_bool(e.get("REGIE_ORIGINAL_TITLE_CONFIRMATION", "false")),
         imdb_akas_url=e.get("IMDB_AKAS_URL", IMDB_AKAS_DEFAULT_URL).strip() or IMDB_AKAS_DEFAULT_URL,
     )

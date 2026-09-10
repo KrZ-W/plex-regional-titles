@@ -23,9 +23,24 @@ class OfflineSession:
 def regie(settings):
     write_regie_csv(settings.cache_dir / "regie.csv")
     write_meta(settings.cache_dir / "regie.csv", {"checked_at": 9e12, "last_modified": "test"})
+    settings.regie_original_title_confirmation = True  # the strict reading; tests cover both
     src = RegieDuCinemaRegistry(settings, session=OfflineSession())
     src.prepare()
     yield src
+    src.close()
+
+
+def test_default_is_no_confirmation(settings):
+    """Default: an empty TITRE_FRANCAIS is a miss for the registry, the chain continues."""
+    assert settings.regie_original_title_confirmation is False
+    write_regie_csv(settings.cache_dir / "regie.csv")
+    write_meta(settings.cache_dir / "regie.csv", {"checked_at": 9e12})
+    src = RegieDuCinemaRegistry(settings, session=OfflineSession())
+    src.prepare()
+    assert src.resolve(make_item("Bloodrayne", "BloodRayne", 2005)) is None
+    imdb = StaticSource("imdb", False, "BloodRayne (fr-CA)")
+    c = SourceChain([src, imdb]).resolve(make_item("Bloodrayne", "BloodRayne", 2005))
+    assert c and c.source == "imdb"
     src.close()
 
 
@@ -61,7 +76,7 @@ def test_original_title_confirmation_uses_registry_title_not_native_script(regie
 
 
 def test_original_title_confirmation_can_be_disabled(settings):
-    settings.regie_original_title_confirmation = False
+    settings.regie_original_title_confirmation = False  # explicit, same as default
     write_regie_csv(settings.cache_dir / "regie.csv")
     write_meta(settings.cache_dir / "regie.csv", {"checked_at": 9e12})
     src = RegieDuCinemaRegistry(settings, session=OfflineSession())

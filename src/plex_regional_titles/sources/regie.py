@@ -207,6 +207,11 @@ class RegieDuCinemaRegistry(RegionalRegistry):
             # native-script title Plex stores as originalTitle).
             original = clean_registry_title(row["titre"]) or item.original_title or item.title
             return Candidate(
-                original, self.name, True, f"{ref}; released under original title", needs_casing=True
+                original,
+                self.name,
+                True,
+                f"{ref}; released under original title",
+                needs_casing=True,
+                ref=ref,
             )
-        return Candidate(titre_fr, self.name, True, ref, needs_casing=True)
+        return Candidate(titre_fr, self.name, True, ref, needs_casing=True, ref=ref)

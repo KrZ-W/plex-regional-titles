@@ -48,3 +48,47 @@ def write_review(path: Path, decisions: list[Decision]) -> None:
                 ]
             )
     os.replace(tmp, path)
+
+
+WOULD_APPLY_COLUMNS = (
+    "library",
+    "rating_key",
+    "kind",
+    "imdb_id",
+    "tmdb_id",
+    "year",
+    "current_title",
+    "candidate",
+    "source",
+    "ref",
+    "cascade_step",
+    "reason",
+)
+
+
+def write_would_apply(path: Path, decisions: list[Decision]) -> None:
+    """Rewrite would-apply.csv: one row per would-be title write (dry run / review mode)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(WOULD_APPLY_COLUMNS)
+        for d in decisions:
+            it, c = d.item, d.candidate
+            w.writerow(
+                [
+                    it.library,
+                    it.rating_key,
+                    it.kind.value,
+                    it.imdb_id or "",
+                    it.tmdb_id or "",
+                    it.year or "",
+                    it.title,
+                    c.title if c else "",
+                    c.source if c else "",
+                    c.ref if c else "",
+                    d.step,
+                    d.reason,
+                ]
+            )
+    os.replace(tmp, path)

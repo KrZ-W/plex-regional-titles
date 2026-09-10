@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-09-10
+
+### Changed
+- `REGIE_ORIGINAL_TITLE_CONFIRMATION` now defaults to `false`: a registry row with an empty French
+  title is a miss for that source and the chain continues. The registry classifies the submitted
+  version, so an empty French title can mean an original-version-only screening rather than a
+  release under the original title. Set it to `true` for the stricter reading.
+- "Already correct" (cascade step 4) also accepts house-style equivalents: roman vs arabic sequel
+  numbers (II/2 … X/10, standalone tokens), `Partie N` / `Part N` / `N`, colon vs dash separators.
+  New counter `house_style_equivalent` in the summary.
+
+### Added
+- `/config/state/would-apply.csv` written on `DRY_RUN=true` or `SAME_TITLE_MODE=review`: one row per
+  would-be write with ids, titles, source, source reference and the deciding cascade step.
+- Québec seed files `examples/exclusions.quebec.txt` and `examples/overrides.quebec.yaml`, copied to
+  `/config/examples/` at container start; never loaded automatically.
+
 ## [1.0.0] - 2026-09-10
 
 ### Added

@@ -1,0 +1,49 @@
+# Québec seed: IMDb id -> title to write and lock.
+# Copy to /config/overrides.yaml and edit. Not loaded automatically.
+
+# --- ai-review managed (SET verdicts) ---
+"tt0105665": "Twin Peaks : Feu marche avec moi"  # Quebec cinema registry lists this; France used "Les 7 derniers jours de Laura Pa
+"tt0088258": "This Is Spinal Tap"  # cinoche.com lists full "This Is Spinal Tap", not France's "Spinal Tap"
+"tt0086979": "Blood Simple"  # cinoche.com lists only "Blood Simple" (v.o.a.s.-t.f.)
+"tt0190590": "O Brother, Where Art Thou?"  # fr.wikipedia infobox "Titre québécois"; France used "O'Brother"
+"tt0970179": "Hugo"  # fr.wikipedia infobox "Titre québécois: Hugo" vs France "Hugo Cabret"
+"tt0488120": "Fracture"  # fr.wikipedia infobox "Titre québécois" = Fracture
+"tt0352248": "Cinderella Man"  # fr.wikipedia infobox "Titre québécois" = Cinderella Man
+"tt0112453": "Balto"  # cinoche.com lists Quebec release as "Balto" with no subtitle
+"tt0114148": "Pocahontas"  # Cinoche (QC) displays plain "Pocahontas"; France adds "une légende indienne"
+"tt0386588": "Hitch"  # Cinoche (QC) is simply "Hitch"; "Expert en séduction" is France subtitle
+"tt0362270": "La Vie aquatique avec Steve Zissou"  # mediafilm.ca uses full title; France drops "avec Steve Zissou"
+"tt33296751": "L'Accordeur"  # cinoche uses "L'Accordeur" for Tuner; "Le Virtuose" is France
+"tt0162661": "Sleepy Hollow"  # Quebec used plain "Sleepy Hollow" (cinoche); subtitle is France
+"tt1623288": "ParaNorman"  # Quebec kept original English title; "L'Étrange Pouvoir de Norman" is France
+"tt1054486": "Futurama: Bender's Game"  # No Quebec French title found; released in QC in original English; France title n
+"tt1372686": "Coriolanus"  # Quebec used original title (cinoche, mediafilm); "Ennemis jurés" is France
+"tt0328832": "The Animatrix"  # Quebec kept English title (mediafilm); current Plex value is a France segment ti
+"tt4698684": "Hunt for the Wilderpeople"  # Quebec kept English title (cinoche, mediafilm); "À la poursuite de Ricky Baker"
+"tt0803096": "Warcraft"  # Quebec kept "Warcraft"; France added "Le Commencement"
+"tt2381941": "Focus"  # Quebec v.f. "Focus"; "Diversion" is the France title
+"tt3076658": "Creed"  # Quebec keeps "Creed"; France added "L'héritage de Rocky Balboa"
+"tt26443597": "Zootopia 2"  # Quebec release keeps English "Zootopia 2"; "Zootopie 2" is France
+"tt0985699": "Valkyrie"  # Cinoche.com/Mediafilm.ca list Quebec v.f. "Valkyrie"; "Walkyrie" is France
+"tt2582496": "Me and Earl and the Dying Girl"  # Cinoche/Mediafilm keep the original English title in Quebec
+"tt0457510": "Nacho Libre"  # Cinoche.com/doublage.qc.ca list Quebec release "Nacho Libre"; "Super Nacho" is F
+"tt20222166": "Spinal Tap II: The End Continues"  # Quebec release kept original English title (cinoche.com, Sony Canada)
+"tt0379786": "Serenity"  # Cinoche.com Quebec v.f. is just "Serenity"; "L'Ultime Rébellion" is France
+"tt1337057": "Le Forcené"  # Quebec registry (mcc.gouv.qc.ca) classifies Uwe Boll's Rampage as "Le forcené"
+"tt0125454": "Paulie"  # fr.wikipedia titre québécois is simply "Paulie"; the descriptive subtitle is Fra
+"tt13238346": "Past Lives"  # Cinoche.com shows Quebec kept English "Past Lives"; "Nos vies d'avant" is France
+"tt21440560": "Viking"  # Quebec film by Stéphane Lafleur; original Quebec title is "Viking"
+"tt0100758": "Teenage Mutant Ninja Turtles"  # Cinoche.com lists Quebec v.f. as the English title
+"tt0118764": "Les Boys"  # Quebec-produced film; actual title is "Les Boys", the "QC" suffix is not part of
+"tt5177120": "The Ministry of Ungentlemanly Warfare"  # Quebec theatrical kept English title (cinoche.com, v.o.a.)
+"tt0478087": "21"  # Quebec kept original title "21" (cinoche.com); "Las Vegas 21" is France
+"tt0098369": "Cannonball III"  # Mediafilm/ouvoir.ca Quebec title "Cannonball III"; France used "L'Équipée du Can
+"tt0104348": "Glengarry Glen Ross"  # Mediafilm Quebec uses full "Glengarry Glen Ross"; "Glengarry" is France
+"tt0870111": "Frost/Nixon"  # Cinoche.com Quebec v.f. "Frost/Nixon"; France added "l'heure de vérité"
+"tt0195685": "Erin Brockovich"  # Cinoche.com Quebec v.f. is "Erin Brockovich" (no subtitle); France added "seule
+"tt15791034": "Barbarian"  # Cinoche.com shows Quebec v.f. "Barbarian"; France used "Barbare"
+"tt0790602": "Nitro"  # Quebec film by Alain DesRochers, original/Quebec title is "Nitro"; "Absolute Rac
+"tt0119173": "G.I. Jane"  # Quebec kept the English title (cinoche.com, v.o.a.); France used "À armes égales
+# QC uses "Les Inconnus: Chapitre N" (per QC release of ch.1 in APPLY bucket)
+"tt28671344": "Les Inconnus: Chapitre 2"
+"tt28682323": "Les Inconnus: Chapitre 3"

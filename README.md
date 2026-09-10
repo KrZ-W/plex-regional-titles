@@ -82,7 +82,7 @@ All configuration is by environment variable.
 | `PLEX_TIMEOUT` | `60` | Plex request timeout, seconds. |
 | `CONFIG_DIR` | `/config` | Where config, cache, state and log live. |
 | `REGIE_DATASET_URL` | Données Québec CSV | Override the registry CSV URL. |
-| `REGIE_ORIGINAL_TITLE_CONFIRMATION` | `true` | A registry row with an empty French title confirms the original title. Set to `false` to treat such rows as no hit (the chain continues). |
+| `REGIE_ORIGINAL_TITLE_CONFIRMATION` | `false` | Stricter reading of the registry: a row with an empty French title confirms the original title. Off by default because the registry classifies the *submitted version*, and an empty French title often means an original-version-only screening (Darjeeling Limited), not a release under the original title. With it off such rows are no hit and the chain continues. |
 | `IMDB_AKAS_URL` | `https://datasets.imdbws.com/title.akas.tsv.gz` | Override the IMDb dataset URL. |
 
 ### The `/config` volume
@@ -94,6 +94,8 @@ All configuration is by environment variable.
 | `review.csv` | Written when `SAME_TITLE_MODE=review`: ambiguous items with current title, candidate, ids and source. Never applied. |
 | `cache/` | Downloaded datasets, SQLite indexes, TMDB response cache. Safe to delete. |
 | `state/last-run.json` | Summary of the last run (used by the container healthcheck). |
+| `state/would-apply.csv` | Written when `DRY_RUN=true` or `SAME_TITLE_MODE=review`: one row per would-be title write (ids, current title, candidate, source, registry reference, cascade step). Review it before the first live run. |
+| `examples/` | Seed curation files copied in by the image at start (`exclusions.quebec.txt`, `overrides.quebec.yaml`). Never loaded automatically. |
 | `log/` | Rotating log file. |
 
 Examples are in [`config-example/`](config-example/).
@@ -105,7 +107,7 @@ For every item in every listed library, in this order:
 1. **Excluded** – IMDb or TMDB id listed in `exclusions.txt` → skip.
 2. **Overridden** – id in `overrides.yaml` → write that title and lock (skipped when already exactly that title and locked).
 3. **Resolve** – ask the sources in `SOURCES` order; the first hit wins and is recorded as the source.
-4. **Already correct** – candidate normalises equal to the current Plex title → skip.
+4. **Already correct** – candidate normalises equal to the current Plex title → skip. A second, *house-style* comparison also counts as already correct (reported as `house-style-equivalent`): roman vs arabic sequel numbers (`II`/`2` … `X`/`10`, standalone tokens only), `Partie N` / `Part N` / `N`, and colon vs dash as subtitle separators. A real subtitle difference (*Aliens* vs *Aliens, le Retour*) is not house style and is applied.
 5. **Ambiguous** – candidate came from the IMDb fallback **and** normalises equal to the item's original title → apply `SAME_TITLE_MODE`. Authoritative sources (a registry, TMDB) never reach this rule: their confirmation *is* the decision.
 6. **Apply** – write the title and lock it.
 
@@ -128,6 +130,20 @@ its own:
 With the Régie source enabled, most Québec movies never get here: the registry
 either gives a French title or confirms the original one.
 
+### Seeding from the Québec examples
+
+The image copies `exclusions.quebec.txt` and `overrides.quebec.yaml` into
+`/config/examples/` at every start. They hold the ids and titles curated for a
+Québec library (known-bad IMDb akas, films that kept their English title). They
+are never loaded on their own; on first run copy what you want:
+
+```sh
+cp config/examples/exclusions.quebec.txt config/exclusions.txt
+cp config/examples/overrides.quebec.yaml config/overrides.yaml
+```
+
+then run once with `DRY_RUN=true` and read `config/state/would-apply.csv`.
+
 ### Correcting a title
 
 - Wrong regional title from a source → add `tt…: "Right title"` to `overrides.yaml`.
@@ -146,7 +162,7 @@ Every run logs a per-library line and writes `state/last-run.json`:
 ```
 
 Counters: `scanned`, `applied` (with a by-source breakdown), `already_correct`,
-`excluded`, `overridden`, `same_title_skipped`, `same_title_reviewed`,
+`house_style_equivalent` (subset of already-correct decided by the house-style rule), `excluded`, `overridden`, `same_title_skipped`, `same_title_reviewed`,
 `no_candidate`, `no_ids`, `errors`, plus `resolved_by_source` (which source
 produced the candidate, whatever the outcome).
 

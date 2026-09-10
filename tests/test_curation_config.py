@@ -53,6 +53,7 @@ def test_settings_defaults():
     assert s.same_title_mode == "skip" and s.schedule == "30 4 * * *"
     assert s.dataset_max_age_days == 7 and s.write_rate == 5.0 and s.dry_run is False
     assert s.config_dir == Path("/config") and s.plex_verify_ssl is True
+    assert s.regie_original_title_confirmation is False
 
 
 def test_settings_parsing():
@@ -69,11 +70,13 @@ def test_settings_parsing():
             "TMDB_API_KEY": "k",
             "CONFIG_DIR": "/tmp/x",
             "PLEX_VERIFY_SSL": "false",
+            "REGIE_ORIGINAL_TITLE_CONFIRMATION": "true",
         }
     )
     assert s.regions == ["CA", "FR"] and s.language == "fr" and s.sources == ["imdb"]
     assert s.write_rate == 2.0 and s.run_once and s.dry_run and s.same_title_mode == "review"
     assert s.tmdb_api_key == "k" and s.config_dir == Path("/tmp/x") and not s.plex_verify_ssl
+    assert s.regie_original_title_confirmation is True
 
 
 @pytest.mark.parametrize(

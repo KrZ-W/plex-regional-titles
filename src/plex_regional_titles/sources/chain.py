@@ -49,7 +49,11 @@ class SourceChain:
         for label, text in (("plex", item.title), ("plex-original", item.original_title)):
             if text and norm(text) == key:
                 return Candidate(
-                    text, cand.source, cand.authoritative, f"{cand.note}; casing={label}".strip("; ")
+                    text,
+                    cand.source,
+                    cand.authoritative,
+                    f"{cand.note}; casing={label}".strip("; "),
+                    ref=cand.ref,
                 )
         for src in donors:
             if item.kind not in src.supports:
@@ -64,10 +68,12 @@ class SourceChain:
                     cand.source,
                     cand.authoritative,
                     f"{cand.note}; casing={src.name}".strip("; "),
+                    ref=cand.ref,
                 )
         return Candidate(
             title_case(cand.title),
             cand.source,
             cand.authoritative,
             f"{cand.note}; casing=heuristic".strip("; "),
+            ref=cand.ref,
         )

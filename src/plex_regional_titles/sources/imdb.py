@@ -199,4 +199,5 @@ class ImdbAkasSource(TitleSource):
             self.name,
             False,
             f"{item.imdb_id} {best['language']}-{best['region']} types={best['types'] or '-'}",
+            ref=f"ordering={best['ordering']}",
         )

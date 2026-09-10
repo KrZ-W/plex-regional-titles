@@ -63,6 +63,43 @@ def norm(value: str | None) -> str:
     return s.strip()
 
 
+_ROMAN_TOKENS = {
+    "ii": "2",
+    "iii": "3",
+    "iv": "4",
+    "v": "5",
+    "vi": "6",
+    "vii": "7",
+    "viii": "8",
+    "ix": "9",
+    "x": "10",
+}
+_PART_WORDS = {"partie", "part"}
+
+
+def house_key(value: str | None) -> str:
+    """``norm`` plus a house-style layer, used only for the "already correct" comparison.
+
+    Equivalences: roman vs arabic sequel numbers (II/2 … X/10, standalone tokens only),
+    "Partie N" / "Part N" / "N", and colon vs dash vs " - " as subtitle separators (which
+    ``norm`` already collapses). It never changes what gets written, only whether the current
+    title is considered already correct.
+    """
+    tokens = norm(value).split()
+    out: list[str] = []
+    for i, tok in enumerate(tokens):
+        if tok in _ROMAN_TOKENS:
+            tok = _ROMAN_TOKENS[tok]
+        if (
+            tok in _PART_WORDS
+            and i + 1 < len(tokens)
+            and (tokens[i + 1].isdigit() or tokens[i + 1] in _ROMAN_TOKENS)
+        ):
+            continue
+        out.append(tok)
+    return " ".join(out)
+
+
 def uninvert_article(value: str | None) -> str:
     """'CHUTE DE L'EMPIRE ROMAIN, LA' -> 'LA CHUTE DE L'EMPIRE ROMAIN'."""
     s = (value or "").strip()

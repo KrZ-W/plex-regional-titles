@@ -17,6 +17,9 @@ if [ "$(id -u)" = "0" ]; then
     for f in "$CONFIG_DIR"/cache/* "$CONFIG_DIR"/state/* "$CONFIG_DIR"/log/*; do
         [ -e "$f" ] && chown app:app "$f" 2>/dev/null || true
     done
+    # example curation files, for copying by hand; never loaded automatically
+    mkdir -p "$CONFIG_DIR/examples" && cp /app/examples/* "$CONFIG_DIR/examples/" 2>/dev/null || true
+    chown -R app:app "$CONFIG_DIR/examples" 2>/dev/null || true
     umask "$UMASK"
     exec setpriv --reuid="$PUID" --regid="$PGID" --clear-groups plex-regional-titles "$@"
 fi

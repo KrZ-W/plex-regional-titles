@@ -1,3 +1,3 @@
 """plex-regional-titles: set Plex titles to the regional release title and lock them."""
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"

@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 
 from plex_regional_titles.cascade import decide
 from plex_regional_titles.config import Settings
 from plex_regional_titles.curation import Curation
 from plex_regional_titles.models import Decision, Kind, Outcome
 from plex_regional_titles.plex_client import PlexClient
-from plex_regional_titles.review import write_review
+from plex_regional_titles.review import write_review, write_would_apply
 from plex_regional_titles.sources import build_sources
 from plex_regional_titles.sources.chain import SourceChain
 from plex_regional_titles.summary import LibrarySummary, RunSummary
@@ -79,6 +80,7 @@ def run_once(
     log.info("Sources in order: %s", ", ".join(s.name for s in chain.sources) or "(none)")
 
     review: list[Decision] = []
+    would_apply: list[Decision] = []
     exit_code = EXIT_OK
     try:
         for name in settings.libraries:
@@ -96,6 +98,9 @@ def run_once(
             for item in plex.items(name):
                 try:
                     d = decide(item, curation, chain.resolve, settings.same_title_mode)
+                    if d.write:
+                        # snapshot before the write so would-apply.csv shows the pre-change title
+                        would_apply.append(replace(d, item=replace(item, plex_obj=None)))
                     if d.write and not settings.dry_run:
                         plex.write_title(item, d.candidate.title)
                 except Exception as exc:
@@ -107,6 +112,9 @@ def run_once(
                 if d.outcome == Outcome.SAME_TITLE_REVIEWED:
                     review.append(d)
             log.info(lib.human())
+        if settings.same_title_mode == "review" or settings.dry_run:
+            write_would_apply(settings.would_apply_file, would_apply)
+            log.info("would-apply.csv: %d row(s)", len(would_apply))
         if settings.same_title_mode == "review":
             write_review(settings.review_file, review)
             log.info("review.csv: %d item(s) queued", len(review))

@@ -42,17 +42,17 @@ The registry has no IMDb or TMDB ids, so matching is textual and deliberately st
 
 - `TITRE_FRANCAIS` filled → that is the Québec title (e.g. `RAMPAGE` 1992 →
   `ENRAGE`, `INCREDIBLES, THE` → `LES INCROYABLE`).
-- `TITRE_FRANCAIS` empty on a matched row → the film was released under its
-  **original title**, as written in the registry's `TITRE` column (the market original,
-  e.g. `AJEOSSI`, not the native-script title Plex may hold as `originalTitle`). That
-  title is then the confirmed regional title, and it is applied and locked only if it
-  differs from the current Plex title.
+- `TITRE_FRANCAIS` empty on a matched row → **no hit** by default; the chain continues
+  with TMDB / IMDb. The registry classifies the *submitted version*: an empty French
+  title usually means the distributor submitted an original-version-only screening
+  (*The Darjeeling Limited* played in Québec in English only, yet the French title
+  *À bord du Darjeeling Limited* is the one in use on video and streaming). It does not
+  prove the film was released under its original title.
 
-  Caveat: the registry classifies the *version* that was submitted. A film shown only
-  in its original version theatrically and dubbed later for video can have an empty
-  French title even though a French title is in common use. If that bites your
-  library, set `REGIE_ORIGINAL_TITLE_CONFIRMATION=false` so such rows are no hit and
-  the chain falls through to TMDB / IMDb, or exclude the ids.
+  `REGIE_ORIGINAL_TITLE_CONFIRMATION=true` selects the stricter reading: such a row
+  confirms the original title, as written in the registry's `TITRE` column (the market
+  original, e.g. `AJEOSSI`, not the native-script title Plex may hold as
+  `originalTitle`), and it is applied and locked if it differs from the current title.
 
 Either way the answer is authoritative: it can never land in the ambiguous
 same-title rule. That is why the registry settles the case IMDb cannot — a Plex item

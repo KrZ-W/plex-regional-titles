@@ -14,6 +14,7 @@ COUNTER_FIELDS = (
     "scanned",
     "applied",
     "already_correct",
+    "house_style_equivalent",
     "excluded",
     "overridden",
     "same_title_skipped",
@@ -32,6 +33,7 @@ class LibrarySummary:
     applied: int = 0
     applied_by_source: dict[str, int] = field(default_factory=dict)
     already_correct: int = 0
+    house_style_equivalent: int = 0
     excluded: int = 0
     overridden: int = 0
     same_title_skipped: int = 0
@@ -58,6 +60,8 @@ class LibrarySummary:
                 self.applied_by_source["override"] = self.applied_by_source.get("override", 0) + 1
         elif o == Outcome.ALREADY_CORRECT:
             self.already_correct += 1
+            if decision.house_style:
+                self.house_style_equivalent += 1
         elif o == Outcome.EXCLUDED:
             self.excluded += 1
         elif o == Outcome.SAME_TITLE_SKIPPED:
@@ -76,7 +80,8 @@ class LibrarySummary:
         res = ", ".join(f"{k}={v}" for k, v in sorted(self.resolved_by_source.items())) or "-"
         return (
             f"[{self.library}] scanned={self.scanned} applied={self.applied} ({by_src}) "
-            f"already-correct={self.already_correct} excluded={self.excluded} "
+            f"already-correct={self.already_correct} (house-style={self.house_style_equivalent}) "
+            f"excluded={self.excluded} "
             f"overridden={self.overridden} same-title-skipped={self.same_title_skipped} "
             f"same-title-reviewed={self.same_title_reviewed} no-candidate={self.no_candidate} "
             f"no-ids={self.no_ids} errors={self.errors} | resolved-by-source: {res}"
@@ -139,7 +144,8 @@ class RunSummary:
             by_src = ", ".join(f"{k}={v}" for k, v in sorted(t.get("applied_by_source", {}).items())) or "-"
             lines.append(
                 f"[total] scanned={t['scanned']} applied={t['applied']} ({by_src}) "
-                f"already-correct={t['already_correct']} excluded={t['excluded']} "
+                f"already-correct={t['already_correct']} (house-style={t['house_style_equivalent']}) "
+                f"excluded={t['excluded']} "
                 f"overridden={t['overridden']} same-title-skipped={t['same_title_skipped']} "
                 f"same-title-reviewed={t['same_title_reviewed']} no-candidate={t['no_candidate']} "
                 f"no-ids={t['no_ids']} errors={t['errors']}"

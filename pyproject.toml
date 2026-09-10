@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plex-regional-titles"
-version = "1.0.0"
+version = "1.1.0"
 description = "Set Plex library item titles to the regional release title and lock them."
 readme = "README.md"
 license = { text = "MIT" }

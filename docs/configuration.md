@@ -20,8 +20,19 @@ when your libraries hold Québec-market titles.
 | Brazilian Portuguese | `tmdb,imdb` | `BR` | `pt` |
 | Latin American Spanish | `tmdb,imdb` | `MX,AR` | `es` |
 
-`REGIE_ORIGINAL_TITLE_CONFIRMATION=false` makes registry rows without a French title a
-miss instead of a confirmation of the original title (see [sources.md](sources.md)).
+`REGIE_ORIGINAL_TITLE_CONFIRMATION=true` (default `false`) makes registry rows without a
+French title a confirmation of the original title instead of a miss (see
+[sources.md](sources.md)).
+
+## Review files
+
+`DRY_RUN=true` or `SAME_TITLE_MODE=review` rewrites `/config/state/would-apply.csv` at
+the end of every run: one row per title the run would write, with library, rating key,
+IMDb/TMDB ids, year, current title, candidate, source, the source's reference
+(`no_film=…` for the registry, `ordering=…` for the IMDb aka, `tmdb=…`), the cascade step
+that decided it (2 = override, 6 = apply) and the reason. It is the file to read before
+the first live run; anything you disagree with goes into `exclusions.txt` or
+`overrides.yaml`.
 
 If `SOURCES` names `tmdb` but `TMDB_API_KEY` is empty, the source is skipped with a
 warning rather than failing the run.

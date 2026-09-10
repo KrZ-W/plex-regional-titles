@@ -29,6 +29,8 @@ Run them as `docker compose run --rm plex-regional-titles once`, or as a contain
   logs applied writes, ambiguous items and the summaries.
 - `/config/state/last-run.json`: full summary of the last run (per-library counters,
   totals, sources, dry-run flag, status, timestamps).
+- `/config/state/would-apply.csv`: every would-be write of the last dry run / review run.
+- `/config/examples/`: seed curation files, refreshed from the image at every start.
 
 ## Cache
 

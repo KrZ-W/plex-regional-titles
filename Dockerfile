@@ -20,6 +20,7 @@ RUN apt-get update \
 WORKDIR /app
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
+COPY examples ./examples
 RUN pip install . && rm -rf /root/.cache
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

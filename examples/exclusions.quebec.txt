@@ -1,0 +1,44 @@
+# Québec seed: IMDb ids whose current Plex title should be left alone.
+# Copy to /config/exclusions.txt and edit. Not loaded automatically.
+
+# --- ai-review managed (KEEP_CURRENT verdicts) ---
+tt3907584  # single Netflix French title; Quebec press uses "Tous nos jours parfaits"
+tt11464826  # Netflix Canada uses "Derrière nos écrans de fumée", same as France
+tt5929776  # single Nat Geo French dub "Avant le déluge"; no distinct Quebec title found
+tt3263946  # No distinct QC title found; francophone title "L'Épreuve du feu" applies
+tt1465522  # mediafilm.ca confirms "Tucker & Dale fightent le mal" as the Quebec title
+tt0094761  # mediafilm.ca titles it "Le Blob (The Blob)" — matches current
+tt0074559  # no documented QC title; France title is de-facto display (user-approved exclude)
+tt0076637  # no documented QC title; France title is de-facto display (user-approved exclude)
+tt0029030  # no documented QC title; France title is de-facto display (user-approved exclude)
+tt0035446  # no documented QC title; France title is de-facto display (user-approved exclude)
+tt0159784  # no documented QC title; France title is de-facto display (user-approved exclude)
+tt8936646  # Cinoche.com and Netflix Canada-French use "Tyler Rake" for Quebec
+tt2209764  # Cinoche.com/Mediafilm.ca confirm Quebec title "Transcendance"
+tt0116483  # "Terminagolf" is the established Quebec French title for Happy Gilmore
+tt0105813  # Mediafilm.ca and Doublage Québec confirm "Sables mortels"
+tt0084602  # Mediafilm/Cinoche list Quebec title "Rocky III - L'Œil du tigre"
+tt0955308  # Cinoche.com titles the 2010 Ridley Scott film "Robin des Bois"
+tt0091799  # mediafilm.ca lists the Quebec film as "Psychose III"
+tt0462465  # Quebec registry and mediafilm.ca list "Outlander - Le Dernier Viking"
+tt0071853  # Cinoche.com/mediafilm.ca list Quebec v.f. as "Monty Python, Sacré Graal"
+tt0050825  # mediafilm.ca uses "Les Sentiers de la gloire" for the Quebec release
+tt0082136  # ouvoir.ca confirms Quebec title "L'Équipée du Cannonball"
+# APPLY-bucket duds (English aka or worse than current FR)
+tt2231253  # Joker -> "L'as de Vegas" (wrong movie)
+tt0095327  # Tombeau des Lucioles -> "Hotaru no haka" (Japanese romaji)
+tt0091251  # Requiem pour un massacre -> "Idi i smotri" (Russian)
+tt0317705  # Les Indestructibles -> "Les Incroyable" (typo)
+tt5323662  # Silent Voice -> "Koe no katachi" (Japanese romaji)
+tt0089085  # Elvis Gratton (keep canonical "Le King des Kings")
+tt0086837  # 2010 -> "The Year We Make Contact" (English aka)
+# REVIEW-bucket items where current Plex FR title is correct QC
+tt9243946  # El Camino (current FR is QC)
+tt14561712  # La Chimère (current FR is QC)
+tt11100856  # Coup de foudre garanti (confirmed QC Netflix)
+tt0088794  # Gagner ou mourir (confirmed QC mediafilm.ca)
+tt3387648  # L'Étrange Cas Deborah Logan (confirmed Apple TV CA-FR)
+tt2990140  # Les Chroniques de Noël (confirmed Netflix CA-FR)
+tt33247023  # Libre échange (current matches QC cinoche)
+tt30343021  # Sur un air de blues (confirmed QC cinoche)
+tt0051201  # Témoin à charge (Wilder 1957, canonical FR)

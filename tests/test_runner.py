@@ -108,6 +108,27 @@ def test_dry_run_writes_nothing_but_counts(settings):
     assert code == EXIT_OK and plex.writes == []
     assert summary.libraries[0].applied == 3 and summary.dry_run is True
     assert json.loads(settings.last_run_file.read_text())["dry_run"] is True
+    rows = settings.would_apply_file.read_text(encoding="utf-8").splitlines()
+    assert rows[0].startswith(
+        "library,rating_key,kind,imdb_id,tmdb_id,year,current_title,candidate,source,ref,cascade_step"
+    )
+    assert len(rows) == 4
+    assert any(",tt1,,1997,À armes égales,G.I. Jane,regie,,6," in r for r in rows)
+
+
+def test_would_apply_written_in_review_mode_with_override_ref(settings):
+    settings.same_title_mode = "review"
+    plex = FakePlex({"Films": _items()})
+    run_once(settings, plex=plex, chain=_chain(), curation=Curation(overrides={"tt8": "Le Forcené"}))
+    rows = settings.would_apply_file.read_text(encoding="utf-8").splitlines()
+    assert any(",8,movie,tt8,,2009,Rampage,Le Forcené,override,,2," in r for r in rows)
+    assert "house_style_equivalent" in json.loads(settings.last_run_file.read_text())["totals"]
+
+
+def test_would_apply_not_written_in_plain_live_mode(settings):
+    plex = FakePlex({"Films": _items()})
+    run_once(settings, plex=plex, chain=_chain(), curation=Curation())
+    assert not settings.would_apply_file.exists()
 
 
 def test_missing_library_is_error_but_run_continues(settings):

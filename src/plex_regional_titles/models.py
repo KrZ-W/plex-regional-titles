@@ -47,6 +47,7 @@ class Candidate:
     authoritative: bool
     note: str = ""
     needs_casing: bool = False
+    ref: str = ""  # registry no_film, IMDb ordering, TMDB id ... for would-apply.csv
 
 
 class Outcome(StrEnum):
@@ -68,6 +69,8 @@ class Decision:
     candidate: Candidate | None = None
     write: bool = False  # True when the title must be written + locked
     reason: str = ""
+    step: int = 0  # cascade step that decided (1 excluded ... 6 apply)
+    house_style: bool = False  # ALREADY_CORRECT only via the house-style layer
 
     @property
     def source(self) -> str | None:

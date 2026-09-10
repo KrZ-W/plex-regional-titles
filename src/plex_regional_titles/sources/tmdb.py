@@ -111,4 +111,6 @@ class TmdbSource(TitleSource):
         title = pick_translation(translations, self.settings.language, self.settings.regions, item.kind)
         if not title:
             return None
-        return Candidate(title, self.name, True, f"tmdb:{item.tmdb_id} {self.settings.locale}")
+        return Candidate(
+            title, self.name, True, f"tmdb:{item.tmdb_id} {self.settings.locale}", ref=f"tmdb={item.tmdb_id}"
+        )
