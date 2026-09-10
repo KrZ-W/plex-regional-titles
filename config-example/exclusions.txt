@@ -1,0 +1,4 @@
+# One id per line: IMDb (tt…) or TMDB (tmdb:…). '#' starts a comment.
+# Items listed here are never touched, whatever the sources say.
+# tt0094761   # The Blob: current title is already the regional one
+# tmdb:475557 # Joker

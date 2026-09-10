@@ -1,0 +1,4 @@
+# id -> exact title to write and lock. Overrides beat every source.
+# Keys are IMDb (tt…) or TMDB (tmdb:…) ids; values are the title as it should display.
+# tt1337057: "Le Forcené"
+# tmdb:146: "Crouching Tiger, Hidden Dragon"

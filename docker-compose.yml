@@ -1,0 +1,22 @@
+services:
+  plex-regional-titles:
+    image: ghcr.io/krz-w/plex-regional-titles:latest
+    container_name: plex-regional-titles
+    restart: unless-stopped
+    environment:
+      PLEX_URL: "http://plex:32400"
+      PLEX_TOKEN: "${PLEX_TOKEN}"
+      PLEX_LIBRARIES: "Films en français,Séries en français"
+      REGIONS: "CA"
+      LANGUAGE: "fr"
+      SOURCES: "regie,tmdb,imdb"
+      TMDB_API_KEY: "${TMDB_API_KEY:-}"
+      SAME_TITLE_MODE: "skip"
+      SCHEDULE: "30 4 * * *"
+      DRY_RUN: "false"
+      LOG_LEVEL: "INFO"
+      TZ: "America/Toronto"
+      PUID: "1000"
+      PGID: "1000"
+    volumes:
+      - ./config:/config
