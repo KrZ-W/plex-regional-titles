@@ -15,6 +15,8 @@ COUNTER_FIELDS = (
     "applied",
     "already_correct",
     "house_style_equivalent",
+    "registry_uncorroborated",
+    "registry_dubbed_version",
     "excluded",
     "overridden",
     "same_title_skipped",
@@ -34,6 +36,8 @@ class LibrarySummary:
     applied_by_source: dict[str, int] = field(default_factory=dict)
     already_correct: int = 0
     house_style_equivalent: int = 0
+    registry_uncorroborated: int = 0
+    registry_dubbed_version: int = 0
     excluded: int = 0
     overridden: int = 0
     same_title_skipped: int = 0
@@ -42,6 +46,12 @@ class LibrarySummary:
     no_ids: int = 0
     errors: int = 0
     resolved_by_source: dict[str, int] = field(default_factory=dict)
+
+    def record_rejection(self, reason: str) -> None:
+        if reason == "registry-uncorroborated":
+            self.registry_uncorroborated += 1
+        elif reason == "registry-dubbed-version":
+            self.registry_dubbed_version += 1
 
     def record(self, decision: Decision) -> None:
         self.scanned += 1
@@ -84,7 +94,9 @@ class LibrarySummary:
             f"excluded={self.excluded} "
             f"overridden={self.overridden} same-title-skipped={self.same_title_skipped} "
             f"same-title-reviewed={self.same_title_reviewed} no-candidate={self.no_candidate} "
-            f"no-ids={self.no_ids} errors={self.errors} | resolved-by-source: {res}"
+            f"no-ids={self.no_ids} errors={self.errors} "
+            f"registry-uncorroborated={self.registry_uncorroborated} "
+            f"registry-dubbed-version={self.registry_dubbed_version} | resolved-by-source: {res}"
         )
 
 
@@ -148,7 +160,9 @@ class RunSummary:
                 f"excluded={t['excluded']} "
                 f"overridden={t['overridden']} same-title-skipped={t['same_title_skipped']} "
                 f"same-title-reviewed={t['same_title_reviewed']} no-candidate={t['no_candidate']} "
-                f"no-ids={t['no_ids']} errors={t['errors']}"
+                f"no-ids={t['no_ids']} errors={t['errors']} "
+                f"registry-uncorroborated={t['registry_uncorroborated']} "
+                f"registry-dubbed-version={t['registry_dubbed_version']}"
             )
         if self.error:
             lines.append(f"error: {self.error}")

@@ -83,6 +83,10 @@ class Settings:
         return self.state_dir / "would-apply.csv"
 
     @property
+    def review_queue_file(self) -> Path:
+        return self.state_dir / "would-apply-review.csv"
+
+    @property
     def run_once(self) -> bool:
         return self.schedule.strip().lower() == "once"
 

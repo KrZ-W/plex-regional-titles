@@ -21,8 +21,10 @@ The hard case is a film that *kept its original title* in the region. IMDb's
 akas cannot tell "kept the English title" apart from "a junk English aka", so a
 plain aka-based script has to hold those back. The Québec government's film
 classification registry (Régie du cinéma, now Ministère de la Culture) records
-the title every film was released under in Québec, so a registry hit settles the
-question either way. See [docs/sources.md](docs/sources.md).
+what was classified and released in Québec. It is used as a **corroborator**: it
+decides which of the properly rendered strings the tool already knows (Plex,
+TMDB, IMDb) is the Québec title, but its own house-style strings are never
+written. See [docs/sources.md](docs/sources.md).
 
 ## Quick start
 
@@ -94,6 +96,7 @@ All configuration is by environment variable.
 | `review.csv` | Written when `SAME_TITLE_MODE=review`: ambiguous items with current title, candidate, ids and source. Never applied. |
 | `cache/` | Downloaded datasets, SQLite indexes, TMDB response cache. Safe to delete. |
 | `state/last-run.json` | Summary of the last run (used by the container healthcheck). |
+| `state/would-apply-review.csv` | Registry hits that were not written (`registry-uncorroborated`, `registry-dubbed-version`) with the raw registry row, year, `NO_FILM`, current title and regional akas. Adjudicate here; answer through `overrides.yaml`. |
 | `state/would-apply.csv` | Written when `DRY_RUN=true` or `SAME_TITLE_MODE=review`: one row per would-be title write (ids, current title, candidate, source, registry reference, cascade step). Review it before the first live run. |
 | `examples/` | Seed curation files copied in by the image at start (`exclusions.quebec.txt`, `overrides.quebec.yaml`). Never loaded automatically. |
 | `log/` | Rotating log file. |
@@ -106,7 +109,7 @@ For every item in every listed library, in this order:
 
 1. **Excluded** – IMDb or TMDB id listed in `exclusions.txt` → skip.
 2. **Overridden** – id in `overrides.yaml` → write that title and lock (skipped when already exactly that title and locked).
-3. **Resolve** – ask the sources in `SOURCES` order; the first hit wins and is recorded as the source.
+3. **Resolve** – ask the sources in `SOURCES` order; the first hit wins and is recorded as the source. A registry hit counts only when corroborated by the current title, the original title, a TMDB translation or an IMDb aka (in that order); the corroborating string is what gets written. Uncorroborated and dubbed-version rows go to `state/would-apply-review.csv`.
 4. **Already correct** – candidate normalises equal to the current Plex title → skip. A second, *house-style* comparison also counts as already correct (reported as `house-style-equivalent`): roman vs arabic sequel numbers (`II`/`2` … `X`/`10`, standalone tokens only), `Partie N` / `Part N` / `N`, and colon vs dash as subtitle separators. A real subtitle difference (*Aliens* vs *Aliens, le Retour*) is not house style and is applied.
 5. **Ambiguous** – candidate came from the IMDb fallback **and** normalises equal to the item's original title → apply `SAME_TITLE_MODE`. Authoritative sources (a registry, TMDB) never reach this rule: their confirmation *is* the decision.
 6. **Apply** – write the title and lock it.
@@ -162,7 +165,7 @@ Every run logs a per-library line and writes `state/last-run.json`:
 ```
 
 Counters: `scanned`, `applied` (with a by-source breakdown), `already_correct`,
-`house_style_equivalent` (subset of already-correct decided by the house-style rule), `excluded`, `overridden`, `same_title_skipped`, `same_title_reviewed`,
+`house_style_equivalent` (subset of already-correct decided by the house-style rule), `registry_uncorroborated`, `registry_dubbed_version`, `excluded`, `overridden`, `same_title_skipped`, `same_title_reviewed`,
 `no_candidate`, `no_ids`, `errors`, plus `resolved_by_source` (which source
 produced the candidate, whatever the outcome).
 

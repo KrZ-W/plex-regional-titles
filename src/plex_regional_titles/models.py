@@ -39,6 +39,17 @@ class Item:
 
 
 @dataclass(slots=True)
+class RegistryRecord:
+    """The raw registry row behind a registry candidate or rejection."""
+
+    ref: str  # e.g. no_film=1234
+    original_title: str  # raw TITRE
+    regional_title: str  # raw TITRE_FRANCAIS (may be empty)
+    year: int | None
+    url: str = ""
+
+
+@dataclass(slots=True)
 class Candidate:
     """A regional title proposed by a source."""
 
@@ -46,8 +57,20 @@ class Candidate:
     source: str
     authoritative: bool
     note: str = ""
-    needs_casing: bool = False
     ref: str = ""  # registry no_film, IMDb ordering, TMDB id ... for would-apply.csv
+    needs_corroboration: bool = False  # registry house-style string: must be corroborated
+    record: RegistryRecord | None = None
+
+
+@dataclass(slots=True)
+class RegistryRejection:
+    """A registry hit that must not be written; queued in would-apply-review.csv."""
+
+    source: str
+    reason: str  # registry-uncorroborated | registry-dubbed-version
+    record: RegistryRecord
+    candidate_title: str = ""  # the cleaned registry string that lacked corroboration
+    akas: list[str] = field(default_factory=list)
 
 
 class Outcome(StrEnum):

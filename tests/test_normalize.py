@@ -5,7 +5,6 @@ from plex_regional_titles.normalize import (
     match_key,
     norm,
     strip_version_suffix,
-    title_case,
     uninvert_article,
 )
 
@@ -83,19 +82,3 @@ def test_match_key_equivalences():
     assert match_key("CHUTE DE L'EMPIRE ROMAIN, LA ") == match_key("La Chute de l'Empire romain")
     assert match_key("G.I. JANE (V.F.)") == match_key("G.I. Jane")
     assert match_key("ERIN BROCKOVICH") == match_key("Erin Brockovich")
-
-
-@pytest.mark.parametrize(
-    "raw, expected",
-    [
-        ("AUX PORTES DE LA NOIRCEUR", "Aux Portes de la Noirceur"),
-        ("LA CHUTE DE L'EMPIRE ROMAIN", "La Chute de l'Empire Romain"),
-        ("G.I. JANE", "G.I. Jane"),
-        ("ROCKY III", "Rocky III"),
-        ("JOKER: FOLIE A DEUX", "Joker: Folie a Deux"),
-        ("AU NOM DU ROI - LE DONJON ASSIEGE", "Au Nom du Roi - Le Donjon Assiege"),
-        ("21", "21"),
-    ],
-)
-def test_title_case(raw, expected):
-    assert title_case(raw) == expected

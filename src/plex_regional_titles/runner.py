@@ -8,9 +8,10 @@ from dataclasses import replace
 from plex_regional_titles.cascade import decide
 from plex_regional_titles.config import Settings
 from plex_regional_titles.curation import Curation
-from plex_regional_titles.models import Decision, Kind, Outcome
+from plex_regional_titles.models import Decision, Item, Kind, Outcome, RegistryRejection
+from plex_regional_titles.normalize import is_stripped_variant
 from plex_regional_titles.plex_client import PlexClient
-from plex_regional_titles.review import write_review, write_would_apply
+from plex_regional_titles.review import write_review, write_review_queue, write_would_apply
 from plex_regional_titles.sources import build_sources
 from plex_regional_titles.sources.chain import SourceChain
 from plex_regional_titles.summary import LibrarySummary, RunSummary
@@ -81,6 +82,7 @@ def run_once(
 
     review: list[Decision] = []
     would_apply: list[Decision] = []
+    review_queue: list[tuple[Item, RegistryRejection]] = []
     exit_code = EXIT_OK
     try:
         for name in settings.libraries:
@@ -98,6 +100,16 @@ def run_once(
             for item in plex.items(name):
                 try:
                     d = decide(item, curation, chain.resolve, settings.same_title_mode)
+                    for rj in chain.take_rejections():
+                        lib.record_rejection(rj.reason)
+                        review_queue.append((item, rj))
+                    if d.write and d.candidate.source != "override":
+                        better = is_stripped_variant(d.candidate.title, chain.renderings(item))
+                        if better is not None:
+                            raise RuntimeError(
+                                f"diacritic guard: refusing to write {d.candidate.title!r}, "
+                                f"a stripped variant of {better!r}"
+                            )
                     if d.write:
                         # snapshot before the write so would-apply.csv shows the pre-change title
                         would_apply.append(replace(d, item=replace(item, plex_obj=None)))
@@ -118,6 +130,8 @@ def run_once(
         if settings.same_title_mode == "review":
             write_review(settings.review_file, review)
             log.info("review.csv: %d item(s) queued", len(review))
+        write_review_queue(settings.review_queue_file, review_queue)
+        log.info("would-apply-review.csv: %d registry rejection(s) queued", len(review_queue))
         summary.finish(
             "ok" if exit_code == EXIT_OK else "error",
             "" if exit_code == EXIT_OK else "errors during run; see log",

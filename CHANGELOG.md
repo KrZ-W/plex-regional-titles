@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-09-11
+
+### Changed
+- The registry is a corroborator, not a naming authority. A registry candidate is written only when
+  an independently sourced, properly rendered string normalises equal to it with at least as many
+  diacritics (current Plex title, Plex original title, TMDB regional translation, any IMDb aka row,
+  in that order); the written value is that string. Uncorroborated registry hits yield nothing and
+  the chain continues. The title-casing heuristic is gone.
+- Registry rows whose French title ends in `(V.F.)`, `(V.F)`, `(V.A.)`, `(V.O.A.)` … name the dubbed
+  version of the original title and never produce a French candidate; they follow the
+  empty-French-title path (`REGIE_ORIGINAL_TITLE_CONFIRMATION`, still `false` by default).
+- Diacritic guard: a candidate that is a diacritic-stripped variant of any known rendering of the
+  same title is replaced by the best rendering; the runner refuses to write one otherwise.
+
+### Added
+- `state/would-apply-review.csv`: registry rejections (`registry-uncorroborated`,
+  `registry-dubbed-version`) with the raw registry row, year, `NO_FILM`, current title and regional
+  akas, for adjudication; decisions come back through `overrides.yaml`.
+- Summary counters `registry_uncorroborated` and `registry_dubbed_version`.
+
 ## [1.1.0] - 2026-09-10
 
 ### Changed

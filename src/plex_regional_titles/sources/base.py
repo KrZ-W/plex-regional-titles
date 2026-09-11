@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING, ClassVar
 
-from plex_regional_titles.models import Candidate, Item, Kind
+from plex_regional_titles.models import Candidate, Item, Kind, RegistryRejection
 
 if TYPE_CHECKING:
     from plex_regional_titles.config import Settings
@@ -29,11 +29,17 @@ class TitleSource(ABC):
         """Download / refresh / index. Raise DatasetUnavailable when the source cannot serve."""
 
     @abstractmethod
-    def resolve(self, item: Item) -> Candidate | None:
-        """Return a candidate or None. Must not raise for ordinary misses."""
+    def resolve(self, item: Item) -> Candidate | RegistryRejection | None:
+        """Return a candidate, a registry rejection (registries only) or None.
+        Must not raise for ordinary misses."""
 
     def close(self) -> None:  # noqa: B027 - optional hook
         """Release handles (SQLite connections etc.)."""
+
+    def renderings(self, item: Item) -> list[str]:
+        """Every properly rendered title string this source knows for the item (for
+        corroborating registry candidates and for the diacritic guard). Default: none."""
+        return []
 
 
 class RegionalRegistry(TitleSource):

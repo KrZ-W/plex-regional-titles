@@ -8,70 +8,94 @@ ambiguous same-title rule).
 
 | Source | Kind | Authoritative | Needs | Movies | Shows |
 |---|---|---|---|---|---|
-| `regie` | regional registry (Québec) | yes | nothing (matches by title/year) | yes | no |
+| `regie` | regional registry (Québec), corroborated by the others | yes | nothing (matches by title/year) | yes | no |
 | `tmdb` | TMDB translations | yes | `TMDB_API_KEY`, tmdb id in Plex guids | yes | yes |
 | `imdb` | IMDb akas | **no** | imdb id in Plex guids | yes | yes |
 
-## 1. Régie du cinéma (Québec)
+## 1. Régie du cinéma (Québec) — a corroborating source
 
 The Ministère de la Culture et des Communications du Québec (formerly the Régie du
 cinéma) publishes the classification of every feature film shown in Québec as open
-data: ~29 000 rows with the original title (`TITRE`), the French release title
-(`TITRE_FRANCAIS`), the English title (`TITRE_ANGLAIS`), up to three directors
-(`REALISATEUR1..3`, as `SURNAME, GIVEN`), the year (`ANNEE`), the registry id
+data: ~29 000 rows with the title submitted for classification (`TITRE`), the French
+release title (`TITRE_FRANCAIS`), the English title (`TITRE_ANGLAIS`), up to three
+directors (`REALISATEUR1..3`, as `SURNAME, GIVEN`), the year (`ANNEE`), the registry id
 (`NO_FILM`) and a URL to the registry entry.
 
-The tool downloads the CSV (semicolon-delimited, UTF-8 with BOM) with conditional
-requests and indexes it in SQLite under `/config/cache/regie.sqlite`.
+**What the registry is.** A record of what was classified and released in Québec, kept
+in an internal house style: capitals, no diacritics, inverted articles
+(`CHUTE DE L'EMPIRE ROMAIN, LA`), `2IEME PARTIE`, `02`. `TITRE_FRANCAIS` is the string a
+distributor submitted for the version they distributed. When the France dub was that
+version, the registry holds the France title: *Bridesmaids* is filed as
+`MES MEILLEURES AMIES` where Québec used *Demoiselles d'honneur*; *Lock, Stock and Two
+Smoking Barrels* as `ARNAQUES, CRIMES ET BOTANIQUE` where Québec used *Arnaques, combines
+et botanique*.
 
-### Matching
+**What it is not.** The authority on how a title is displayed. Editorial sources
+(cinoche.com, Mediafilm) carry the marketing titles the public saw; they are out of scope
+for this tool, which only uses machine-readable, licensed data.
 
-The registry has no IMDb or TMDB ids, so matching is textual and deliberately strict:
+So the registry is a **corroborator**: a registry hit tells the tool *which* of the
+strings it already knows is the Québec title, and it never supplies the written string
+itself.
 
-1. Normalise the Plex item's `originalTitle` and `title` (see the README) and look
-   them up against the normalised `TITRE`, `TITRE_ANGLAIS` and `TITRE_FRANCAIS`
-   columns. Inverted articles (`FALL OF THE ROMAN EMPIRE, THE`) and version markers
-   (`(V.F.)`, `(V.O.A.)`, `(V.O.F.)`, `(FR.)`) are handled.
-2. Keep rows whose year is within **±1** of the Plex year (release years differ by
-   country and by source). An item without a year never matches.
-3. If more than one row remains, keep rows whose director surname matches one of the
-   Plex item's directors.
+### Matching a row
+
+The registry has no IMDb or TMDB ids, so matching is textual and strict:
+
+1. Normalise the Plex item's `originalTitle` and `title` and look them up against the
+   normalised `TITRE`, `TITRE_ANGLAIS` and `TITRE_FRANCAIS` columns (inverted articles and
+   version markers are handled).
+2. Keep rows whose year is within **±1** of the Plex year. An item without a year never
+   matches.
+3. If more than one row remains, keep rows whose director surname matches one of the Plex
+   item's directors; identical duplicate classifications count as one.
 4. Require **exactly one** row. Anything else is *no hit* and the chain moves on.
 
-### Semantics of a hit
+### From a row to a candidate
 
-- `TITRE_FRANCAIS` filled → that is the Québec title (e.g. `RAMPAGE` 1992 →
-  `ENRAGE`, `INCREDIBLES, THE` → `LES INCROYABLE`).
-- `TITRE_FRANCAIS` empty on a matched row → **no hit** by default; the chain continues
-  with TMDB / IMDb. The registry classifies the *submitted version*: an empty French
-  title usually means the distributor submitted an original-version-only screening
-  (*The Darjeeling Limited* played in Québec in English only, yet the French title
-  *À bord du Darjeeling Limited* is the one in use on video and streaming). It does not
-  prove the film was released under its original title.
+- `TITRE_FRANCAIS` ends in `(V.F.)`, `(V.F)`, `(V. F.)`, `(V.A.)`, `(V.O.A.)` … → the row
+  names the *dubbed or original-language version of the original title*, not a French
+  title (`ABYSS (V.F.)` is the dubbed *The Abyss*, whose Québec title is *L'abysse*).
+  Such a row is treated exactly like an empty French title (below) and never yields a
+  French candidate. `(V.O.F.)` marks an original French-language film and is a French
+  title.
+- `TITRE_FRANCAIS` empty (or a dubbed-version row) → **no hit** by default; the chain
+  continues with TMDB / IMDb, and the row is queued in `would-apply-review.csv` with
+  reason `registry-dubbed-version` when it carried a version marker. With
+  `REGIE_ORIGINAL_TITLE_CONFIRMATION=true` the stricter reading applies: the row confirms
+  the original title (`TITRE`), which is then a candidate subject to corroboration like
+  any other.
+- Otherwise the cleaned `TITRE_FRANCAIS` is the candidate, subject to corroboration.
 
-  `REGIE_ORIGINAL_TITLE_CONFIRMATION=true` selects the stricter reading: such a row
-  confirms the original title, as written in the registry's `TITRE` column (the market
-  original, e.g. `AJEOSSI`, not the native-script title Plex may hold as
-  `originalTitle`), and it is applied and locked if it differs from the current title.
+### Corroboration (the rule that decides what gets written)
 
-Either way the answer is authoritative: it can never land in the ambiguous
-same-title rule. That is why the registry settles the case IMDb cannot — a Plex item
-showing *À armes égales* (France) whose registry row says `G.I. JANE (V.F.)` is
-confidently renamed back to *G.I. Jane*.
+A registry candidate is written only when an **independently sourced, properly
+rendered** string normalises equal to it and carries at least as many diacritics.
+Checked in this order:
 
-### Casing
+1. the current Plex title,
+2. the Plex original title,
+3. the TMDB `LANGUAGE-REGION` translation (when the `tmdb` source is configured),
+4. any IMDb aka row for the id (when the `imdb` source is configured).
 
-The registry publishes titles in capitals, mostly without accents, and with its own
-house style for numbering and subtitles (`BEETHOVEN II`, `RETOUR VERS LE FUTUR PARTIE II`,
-`LE FLIC DE BEVERLY HILLS 02`). Numbering differences are *not* normalised away, so a
-Plex title that differs from the registry only in that respect is rewritten to the
-registry's form; add an override if you prefer yours. The registry
-decides *which* title is right; the *cased* text is borrowed from the first of these
-that normalises equal to the registry title: the Plex title, the Plex original title,
-then the candidates of the sources further down the chain (TMDB, IMDb). If none
-matches, a French title-casing heuristic is applied and the decision is logged with
-`casing=heuristic`; such titles lose their accents, so an override is the fix when
-it matters.
+The **written value is that string**, never the registry's. If nothing corroborates, the
+registry yields nothing for the item, the chain continues, and the row is queued in
+`/config/state/would-apply-review.csv` with reason `registry-uncorroborated`, carrying the
+raw `TITRE` / `TITRE_FRANCAIS`, year, `NO_FILM`, the current title and the regional akas
+seen. A human or an external tool adjudicates that file; decisions come back through
+`overrides.yaml`.
+
+Consequences: a Québec title that no other source renders properly is not written (it
+would otherwise arrive in capitals without accents); a France title that slipped into the
+registry is not written unless some source renders it, in which case the item is at least
+as well served as by that source alone.
+
+### Diacritic guard
+
+Whatever the source, a candidate that is a diacritic-stripped variant of a known rendering
+of the same title (`Divise` where an aka row says `Divisé`) is replaced by the best
+rendering before the cascade, and the runner refuses to write one should it ever get
+through (counted as an error). Overrides are exempt: they are human decisions.
 
 ## 2. TMDB translations
 

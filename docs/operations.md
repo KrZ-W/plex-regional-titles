@@ -30,6 +30,8 @@ Run them as `docker compose run --rm plex-regional-titles once`, or as a contain
 - `/config/state/last-run.json`: full summary of the last run (per-library counters,
   totals, sources, dry-run flag, status, timestamps).
 - `/config/state/would-apply.csv`: every would-be write of the last dry run / review run.
+- `/config/state/would-apply-review.csv`: registry hits the last run refused to write, for
+  adjudication.
 - `/config/examples/`: seed curation files, refreshed from the image at every start.
 
 ## Cache
@@ -55,7 +57,8 @@ Indexes are rebuilt automatically when `REGIONS` / `LANGUAGE` change.
   `tmdb` from `SOURCES`.
 - *Many `no-ids`* — items without an IMDb or TMDB guid (unmatched in Plex). Fix the
   match in Plex.
-- *A title got a wrong casing (`casing=heuristic` in the log)* — the registry gave the
-  title in capitals and no cased donor matched. Add the accented title to
-  `overrides.yaml`.
+- *A registry title I know is right was not applied* — look for it in
+  `state/would-apply-review.csv`: `registry-uncorroborated` means no source renders that
+  string properly, so add it to `overrides.yaml` with its accents; `registry-dubbed-version`
+  means the row only named the dubbed version of the original title.
 - *Kometa keeps changing titles back* — see the README section on Kometa.

@@ -8,7 +8,7 @@ through the same interface.
 ## The interface
 
 ```python
-from plex_regional_titles.models import Candidate, DatasetUnavailable, Item, Kind
+from plex_regional_titles.models import Candidate, DatasetUnavailable, Item, Kind, RegistryRecord
 from plex_regional_titles.sources import RegionalRegistry, register_registry
 
 
@@ -28,18 +28,22 @@ class MyRegistry(RegionalRegistry):
         """Return the regional title for this item, or None when there is no confident hit.
         Never raise for an ordinary miss."""
         ...
-        return Candidate(title, self.name, authoritative=True, note="ref=123", needs_casing=True)
+        record = RegistryRecord("ref=123", raw_original, raw_regional, year)
+        return Candidate(title, self.name, authoritative=True, note="ref=123", ref="ref=123",
+                         needs_corroboration=True, record=record)
 
     def close(self) -> None:
         """Release handles."""
 ```
 
 What you get on `Item`: `title`, `original_title`, `year`, `directors`, `imdb_id`,
-`tmdb_id`, `tvdb_id`, `kind`, `library`. What you return: a `Candidate` whose
-`authoritative` flag is `True` (registries decide; the ambiguous same-title rule never
-applies to them), an optional `note` shown in the log and `review.csv`, and
-`needs_casing=True` if your data is upper-case so the chain borrows the casing from
-Plex or a downstream source.
+`tmdb_id`, `tvdb_id`, `kind`, `library`. What you return: a `Candidate` with
+`authoritative=True` (registries decide; the ambiguous same-title rule never applies to
+them), `needs_corroboration=True` and a `RegistryRecord` (your raw row) so the chain can
+corroborate the string against Plex / TMDB / IMDb and, failing that, queue the row in
+`would-apply-review.csv`. Registries are corroborators: their own strings are never
+written. Return a `RegistryRejection(name, "registry-dubbed-version", record)` for rows
+that only name the dubbed version of the original title.
 
 Helpers you should reuse:
 
@@ -72,8 +76,8 @@ year (±1), break ties with the director's surname, and require a unique row; re
 `None` otherwise. False positives rename and lock the wrong title, false negatives only
 fall through to the next source. Encode the "released under its original title"
 semantics explicitly, as the Québec registry does with an empty French title: return
-`Candidate(item.original_title or item.title, ...)` so the chain treats it as a
-confirmation rather than a miss.
+`Candidate(raw_original_title, ..., needs_corroboration=True, record=...)` behind an
+opt-in setting, as `REGIE_ORIGINAL_TITLE_CONFIRMATION` does.
 
 Add tests under `tests/` that build a small fixture of your registry's format and cover
 unique match, year window, tiebreak, ambiguity → no hit, and the dataset-unavailable

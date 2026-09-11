@@ -20,6 +20,13 @@ _INVERTED_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Markers naming the *dubbed / original-language version* of the original title rather than a
+# French title: (V.F.), (V.F), (V. F.), (V.A.), (V.O.A.), (V.O.A.S.-T.F.) ...  "(V.O.F.)" is not one:
+# it marks an original French-language version, i.e. a genuine French title.
+_DUBBED_SUFFIX_RE = re.compile(
+    r"\(\s*(?:v\.?\s*f\.?|v\.?\s*a\.?|v\.?\s*o\.?\s*a\.?[a-z.\s-]*)\s*\)\s*$", re.IGNORECASE
+)
+
 # Parenthesised version markers appended to registry titles: (V.F.), (V.O.A.), (V.F), (FR.) ...
 _VERSION_SUFFIX_RE = re.compile(
     r"\s*\(\s*(?:v\.?\s*o\.?\s*[a-z.\s-]*|v\.?\s*f\.?|v\.?\s*a\.?|fr\.?|s\.?\s*-?\s*t\.?\s*[a-z.]*)\s*\)\s*$",
@@ -138,84 +145,26 @@ def match_key(value: str | None) -> str:
     return norm(clean_registry_title(value))
 
 
-_SMALL_WORDS = {
-    "de",
-    "du",
-    "des",
-    "la",
-    "le",
-    "les",
-    "et",
-    "a",
-    "à",
-    "au",
-    "aux",
-    "en",
-    "un",
-    "une",
-    "d",
-    "l",
-    "ou",
-    "sur",
-    "sous",
-    "dans",
-    "par",
-    "pour",
-    "chez",
-    "the",
-    "of",
-    "and",
-    "in",
-    "on",
-    "to",
-    "for",
-    "or",
-    "an",
-    "at",
-    "by",
-    "vs",
-}
-_ROMAN_RE = re.compile(r"^(?=[ivxlc]+$)m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$")
+def has_dubbed_version_suffix(value: str | None) -> bool:
+    """True for 'ABYSS (V.F.)', 'HUGO (V.F)', 'TITRE (V.O.A.)': the row names the dubbed or
+    original-language version of the original title, not a French title."""
+    return bool(_DUBBED_SUFFIX_RE.search((value or "").strip()))
 
 
-def _cap_word(word: str, first: bool) -> str:
-    lw = word.lower()
-    if not lw:
-        return word
-    # G.I., U.S.A., R.I.P.
-    if re.fullmatch(r"(?:[a-z]\.)+[a-z]?\.?", lw):
-        return lw.upper()
-    if _ROMAN_RE.match(lw) and len(lw) > 1:
-        return lw.upper()
-    # d'artagnan / l'empire -> D'Artagnan / L'Empire ; first-position "L'" keeps capital
-    m = re.match(r"^([dl])'(.+)$", lw)
-    if m:
-        head, rest = m.groups()
-        rest = rest[:1].upper() + rest[1:]
-        return (head.upper() if first else head) + "'" + rest
-    if not first and lw in _SMALL_WORDS:
-        return lw
-    return lw[:1].upper() + lw[1:]
+def diacritics(value: str | None) -> int:
+    """Number of combining marks in the NFD form: how 'properly rendered' a string is."""
+    return sum(1 for ch in unicodedata.normalize("NFD", value or "") if unicodedata.combining(ch))
 
 
-def title_case(value: str) -> str:
-    """Best-effort casing for registries that publish titles in capitals.
+def is_stripped_variant(written: str, renderings: list[str]) -> str | None:
+    """Return the rendering that ``written`` is a diacritic-stripped variant of, else None.
 
-    Only used when no cased donor (Plex, TMDB, IMDb) matches the registry title.
-    Accents cannot be restored, which is why donors are preferred.
+    A stripped variant normalises equal to a known rendering but carries fewer diacritics
+    (e.g. 'Divise' vs 'Divisé'). Such a string must never be written.
     """
-    words = value.strip().split()
-    out: list[str] = []
-    first = True
-    for w in words:
-        # keep punctuation glued to the word
-        m = re.match(r"^([\"'«(\[]*)(.*?)([\"'»)\]:;,.!?…-]*)$", w)
-        lead, core, trail = m.groups() if m else ("", w, "")
-        if not core:
-            out.append(w)
-            first = w in ("-", "–", "—", ":")
-            continue
-        out.append(lead + _cap_word(core, first) + trail)
-        # a new "sentence" starts after ':' or ' - '
-        first = bool(re.search(r"[:!?]$", trail)) or core == "-"
-    return " ".join(out)
+    key, n = norm(written), diacritics(written)
+    best = None
+    for r in renderings:
+        if r and norm(r) == key and diacritics(r) > n and (best is None or diacritics(r) > diacritics(best)):
+            best = r
+    return best

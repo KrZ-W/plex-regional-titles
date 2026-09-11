@@ -104,6 +104,24 @@ class TmdbSource(TitleSource):
             self.conn.commit()
         return data
 
+    def renderings(self, item: Item) -> list[str]:
+        """All LANGUAGE translation titles (any region), regional one first."""
+        if not item.tmdb_id:
+            return []
+        translations = self._translations(item.kind, item.tmdb_id)
+        field = "title" if item.kind == Kind.MOVIE else "name"
+        out: list[str] = []
+        regional = pick_translation(translations, self.settings.language, self.settings.regions, item.kind)
+        if regional:
+            out.append(regional)
+        for t in translations:
+            if (t.get("iso_639_1") or "").lower() != self.settings.language:
+                continue
+            title = ((t.get("data") or {}).get(field) or "").strip()
+            if title and title not in out:
+                out.append(title)
+        return out
+
     def resolve(self, item: Item) -> Candidate | None:
         if not item.tmdb_id:
             return None

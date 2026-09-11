@@ -18,8 +18,20 @@ from pathlib import Path
 import requests
 
 from plex_regional_titles.download import fetch_dataset, read_meta
-from plex_regional_titles.models import Candidate, DatasetUnavailable, Item, Kind
-from plex_regional_titles.normalize import clean_registry_title, match_key, norm
+from plex_regional_titles.models import (
+    Candidate,
+    DatasetUnavailable,
+    Item,
+    Kind,
+    RegistryRecord,
+    RegistryRejection,
+)
+from plex_regional_titles.normalize import (
+    clean_registry_title,
+    has_dubbed_version_suffix,
+    match_key,
+    norm,
+)
 from plex_regional_titles.sources.base import RegionalRegistry, register_registry
 
 log = logging.getLogger(__name__)
@@ -196,22 +208,29 @@ class RegieDuCinemaRegistry(RegionalRegistry):
             return None
         return self._candidate(rows[0], item)
 
-    def _candidate(self, row: sqlite3.Row, item: Item) -> Candidate:
+    def _candidate(self, row: sqlite3.Row, item: Item) -> Candidate | RegistryRejection | None:
         ref = f"no_film={row['no_film']}"
-        titre_fr = clean_registry_title(row["titre_fr"])
+        record = RegistryRecord(
+            ref, row["titre"] or "", row["titre_fr"] or "", row["annee"], row["url"] or ""
+        )
+        raw_fr = (row["titre_fr"] or "").strip()
+        dubbed = has_dubbed_version_suffix(raw_fr)
+        titre_fr = "" if dubbed else clean_registry_title(raw_fr)
         if not titre_fr:
+            # No French title, or "(V.F.)": the row names the dubbed version of the original
+            # title. It says the film was released under its original title, nothing more.
             if not self.settings.regie_original_title_confirmation:
+                if dubbed:
+                    return RegistryRejection(self.name, "registry-dubbed-version", record)
                 return None
-            # Matched, but no French title on file: released under its original title, i.e. the
-            # registry's own TITRE column (a romanised / market original, not necessarily the
-            # native-script title Plex stores as originalTitle).
             original = clean_registry_title(row["titre"]) or item.original_title or item.title
             return Candidate(
                 original,
                 self.name,
                 True,
                 f"{ref}; released under original title",
-                needs_casing=True,
                 ref=ref,
+                needs_corroboration=True,
+                record=record,
             )
-        return Candidate(titre_fr, self.name, True, ref, needs_casing=True, ref=ref)
+        return Candidate(titre_fr, self.name, True, ref, ref=ref, needs_corroboration=True, record=record)

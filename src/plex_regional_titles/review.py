@@ -6,7 +6,7 @@ import csv
 import os
 from pathlib import Path
 
-from plex_regional_titles.models import Decision
+from plex_regional_titles.models import Decision, Item, RegistryRejection
 
 COLUMNS = (
     "library",
@@ -89,6 +89,59 @@ def write_would_apply(path: Path, decisions: list[Decision]) -> None:
                     c.ref if c else "",
                     d.step,
                     d.reason,
+                ]
+            )
+    os.replace(tmp, path)
+
+
+REVIEW_QUEUE_COLUMNS = (
+    "library",
+    "rating_key",
+    "kind",
+    "imdb_id",
+    "tmdb_id",
+    "year",
+    "current_title",
+    "original_title",
+    "reason",
+    "registry",
+    "registry_ref",
+    "registry_titre",
+    "registry_titre_francais",
+    "registry_annee",
+    "registry_candidate",
+    "regional_akas",
+)
+
+
+def write_review_queue(path: Path, entries: list[tuple[Item, RegistryRejection]]) -> None:
+    """Rewrite would-apply-review.csv: registry hits that were not written and need a human
+    (or an external tool) to adjudicate. Decisions come back through overrides.yaml."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(REVIEW_QUEUE_COLUMNS)
+        for it, rj in entries:
+            rec = rj.record
+            w.writerow(
+                [
+                    it.library,
+                    it.rating_key,
+                    it.kind.value,
+                    it.imdb_id or "",
+                    it.tmdb_id or "",
+                    it.year or "",
+                    it.title,
+                    it.original_title or "",
+                    rj.reason,
+                    rj.source,
+                    rec.ref,
+                    rec.original_title,
+                    rec.regional_title,
+                    rec.year or "",
+                    rj.candidate_title,
+                    " | ".join(rj.akas),
                 ]
             )
     os.replace(tmp, path)

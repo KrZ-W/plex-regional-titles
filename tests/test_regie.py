@@ -2,7 +2,7 @@ import pytest
 import requests
 
 from plex_regional_titles.download import write_meta
-from plex_regional_titles.models import DatasetUnavailable, Kind
+from plex_regional_titles.models import DatasetUnavailable, Kind, RegistryRejection
 from plex_regional_titles.sources.chain import SourceChain
 from plex_regional_titles.sources.regie import (
     RegieDuCinemaRegistry,
@@ -64,15 +64,17 @@ def test_director_surname():
 def test_unique_title_year_match_original_title_confirmed(regie):
     c = regie.resolve(make_item("Bloodrayne", "BloodRayne", 2005))
     assert c and c.source == "regie" and c.authoritative
-    assert c.title == "BLOODRAYNE" and "original title" in c.note and c.needs_casing
-    # through the chain the casing comes from Plex
-    assert SourceChain([regie]).resolve(make_item("Bloodrayne", "BloodRayne", 2005)).title == "Bloodrayne"
+    assert c.title == "BLOODRAYNE" and "original title" in c.note and c.needs_corroboration
+    assert c.record and c.record.ref == "no_film=269007" and c.record.regional_title == ""
+    # through the chain the written string is the corroborating Plex title, never the registry's
+    c = SourceChain([regie]).resolve(make_item("Bloodrayne", "BloodRayne", 2005))
+    assert c.title == "Bloodrayne" and "corroborated" in c.note
 
 
 def test_original_title_confirmation_uses_registry_title_not_native_script(regie):
     # Plex stores the native-script original; the registry's TITRE is the market original
     c = SourceChain([regie]).resolve(make_item("Ajeossi", "아저씨", 2010))
-    assert c and c.title == "Ajeossi" and "casing=plex" in c.note
+    assert c and c.title == "Ajeossi" and "corroborated" in c.note
 
 
 def test_original_title_confirmation_can_be_disabled(settings):
@@ -93,15 +95,32 @@ def test_duplicate_classification_rows_count_as_one(settings):
     ]
     write_regie_csv(settings.cache_dir / "regie.csv", rows)
     write_meta(settings.cache_dir / "regie.csv", {"checked_at": 9e12})
+    settings.regie_original_title_confirmation = True
     src = RegieDuCinemaRegistry(settings, session=OfflineSession())
     src.prepare()
     assert src.resolve(make_item("Leo", "Leo", 2023)).title == "LEO"
     src.close()
 
 
-def test_vf_suffix_means_original_title_kept(regie):
+def test_vf_suffix_means_dubbed_version_of_original_title(regie):
+    # strict reading (fixture): the row confirms the original title, as a registry string
     c = regie.resolve(make_item("À armes égales", "G.I. Jane", 1997, directors=["Ridley Scott"]))
-    assert c and c.title == "G.I. JANE" and c.needs_casing
+    assert c and c.title == "G.I. JANE" and c.needs_corroboration and "original title" in c.note
+
+
+def test_vf_suffix_is_a_dubbed_version_rejection_by_default(settings):
+    write_regie_csv(settings.cache_dir / "regie.csv")
+    write_meta(settings.cache_dir / "regie.csv", {"checked_at": 9e12})
+    src = RegieDuCinemaRegistry(settings, session=OfflineSession())
+    src.prepare()
+    r = src.resolve(make_item("À armes égales", "G.I. Jane", 1997))
+    assert isinstance(r, RegistryRejection) and r.reason == "registry-dubbed-version"
+    assert r.record.regional_title == "G.I. JANE (V.F.)" and r.record.ref == "no_film=106395"
+    # never a French candidate: the chain moves on and queues the rejection
+    chain = SourceChain([src, StaticSource("imdb", False, "Soldat Jane")])
+    c = chain.resolve(make_item("À armes égales", "G.I. Jane", 1997))
+    assert c.source == "imdb" and [r.reason for r in chain.take_rejections()] == ["registry-dubbed-version"]
+    src.close()
 
 
 def test_french_title_with_inverted_article(regie):
@@ -163,24 +182,31 @@ def test_shows_not_supported(regie):
     assert Kind.SHOW not in regie.supports
 
 
-def test_chain_casing_from_plex_original(regie):
+def test_chain_corroboration_from_plex_original(regie):
     chain = SourceChain([regie])
     c = chain.resolve(make_item("À armes égales", "G.I. Jane", 1997))
-    assert c.title == "G.I. Jane" and "casing=plex-original" in c.note
+    assert c.title == "G.I. Jane" and "corroborated" in c.note and c.source == "regie"
 
 
-def test_chain_casing_from_downstream_source(regie):
+def test_chain_corroboration_from_tmdb(regie):
     tmdb = StaticSource("tmdb", True, "La Chute de l'Empire romain")
     chain = SourceChain([regie, tmdb])
     c = chain.resolve(make_item("La chute de l'empire", "The Fall of the Roman Empire", 1964))
-    assert c.source == "regie" and c.title == "La Chute de l'Empire romain" and "casing=tmdb" in c.note
+    assert c.source == "regie" and c.title == "La Chute de l'Empire romain" and "corroborated" in c.note
 
 
-def test_chain_casing_heuristic_when_no_donor(regie):
+def test_chain_uncorroborated_registry_yields_nothing_and_continues(regie):
     tmdb = StaticSource("tmdb", True, "Something Else")
     chain = SourceChain([regie, tmdb])
     c = chain.resolve(make_item("Rampage", "Rampage", 1992, directors=["William Friedkin"]))
-    assert c.title == "Enrage" and "casing=heuristic" in c.note
+    assert c.source == "tmdb" and c.title == "Something Else"
+    (rj,) = chain.take_rejections()
+    assert rj.reason == "registry-uncorroborated" and rj.candidate_title == "ENRAGE"
+    assert (
+        rj.record.regional_title == "ENRAGE"
+        and rj.record.original_title == "RAMPAGE"
+        and rj.record.year == 1992
+    )
 
 
 def test_chain_first_hit_wins_and_skips_unsupported(regie):
@@ -204,7 +230,8 @@ def test_prepare_uses_stale_index_when_refresh_fails(settings, caplog):
     write_meta(csv_path, {"checked_at": 0})  # stale -> tries to refresh -> offline
     src = RegieDuCinemaRegistry(settings, session=OfflineSession())
     src.prepare()
-    assert src.resolve(make_item("21", "21", 2008)).title == "21 (V.F.)".replace(" (V.F.)", "")
+    c = src.resolve(make_item("Rampage", "Rampage", 1992, directors=["William Friedkin"]))
+    assert c.title == "ENRAGE" and c.needs_corroboration
     src.close()
 
 

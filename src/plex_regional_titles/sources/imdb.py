@@ -180,17 +180,34 @@ class ImdbAkasSource(TitleSource):
             self.conn.close()
             self.conn = None
 
-    def resolve(self, item: Item) -> Candidate | None:
+    def akas(self, item: Item) -> list[dict]:
+        """Every indexed aka row for the item's IMDb id, by ordering."""
         if not item.imdb_id:
-            return None
+            return []
         if self.conn is None:
             raise RuntimeError("imdb: prepare() not called")
-        rows = [
+        return [
             dict(r)
             for r in self.conn.execute(
                 "SELECT * FROM akas WHERE title_id=? ORDER BY ordering", (item.imdb_id,)
             ).fetchall()
         ]
+
+    def regional_akas(self, item: Item) -> list[str]:
+        """Titles of the LANGUAGE akas for the configured regions (for the review file)."""
+        return [
+            r["title"].strip()
+            for r in self.akas(item)
+            if r["language"] == self.settings.language and r["region"] in self.settings.regions
+        ]
+
+    def renderings(self, item: Item) -> list[str]:
+        return [r["title"].strip() for r in self.akas(item) if r["title"].strip()]
+
+    def resolve(self, item: Item) -> Candidate | None:
+        rows = self.akas(item)
+        if not rows:
+            return None
         best = pick_aka(rows, self.settings.regions, self.settings.language)
         if not best:
             return None
