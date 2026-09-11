@@ -31,6 +31,9 @@ from plex_regional_titles.normalize import (
     has_dubbed_version_suffix,
     match_key,
     norm,
+    strip_articles,
+    strip_language_suffix,
+    strip_version_suffix,
 )
 from plex_regional_titles.sources.base import RegionalRegistry, register_registry
 
@@ -214,14 +217,13 @@ class RegieDuCinemaRegistry(RegionalRegistry):
             ref, row["titre"] or "", row["titre_fr"] or "", row["annee"], row["url"] or ""
         )
         raw_fr = (row["titre_fr"] or "").strip()
-        dubbed = has_dubbed_version_suffix(raw_fr)
-        titre_fr = "" if dubbed else clean_registry_title(raw_fr)
+        if has_dubbed_version_suffix(raw_fr):
+            return self._dubbed_row(row, record, raw_fr)
+        titre_fr = clean_registry_title(raw_fr)
         if not titre_fr:
-            # No French title, or "(V.F.)": the row names the dubbed version of the original
-            # title. It says the film was released under its original title, nothing more.
+            # No French title on file. Only the opt-in strict reading makes that a confirmation
+            # of the original title.
             if not self.settings.regie_original_title_confirmation:
-                if dubbed:
-                    return RegistryRejection(self.name, "registry-dubbed-version", record)
                 return None
             original = clean_registry_title(row["titre"]) or item.original_title or item.title
             return Candidate(
@@ -234,3 +236,41 @@ class RegieDuCinemaRegistry(RegionalRegistry):
                 record=record,
             )
         return Candidate(titre_fr, self.name, True, ref, ref=ref, needs_corroboration=True, record=record)
+
+    def _dubbed_row(
+        self, row: sqlite3.Row, record: RegistryRecord, raw_fr: str
+    ) -> Candidate | RegistryRejection:
+        """'<X> (V.F.)': the French version was released under title X. Discriminate on X.
+
+        - X equals TITRE or TITRE_ANGLAIS (case/diacritics-insensitive, no article handling):
+          the film was released under that title -> candidate X, still subject to
+          corroboration. Rows older than REGIE_CONFIRM_MIN_YEAR are not trusted (early records
+          file the dub under the English title) and go to review as ambiguous.
+        - X differs only by a leading/trailing article ('ABYSS' vs 'ABYSS, THE'): ambiguous.
+        - Otherwise X is a distinct dubbed title ('WW84'): dubbed version, never a candidate.
+        """
+        x_raw = strip_version_suffix(raw_fr)
+        x = norm(x_raw)
+        originals = [
+            norm(strip_language_suffix(row["titre"])),
+            norm(strip_version_suffix(strip_language_suffix(row["titre_en"]))),
+        ]
+        if x and x in originals:
+            year = row["annee"]
+            if year is None or year < self.settings.regie_confirm_min_year:
+                return RegistryRejection(
+                    self.name, "registry-original-ambiguous", record, candidate_title=x_raw
+                )
+            return Candidate(
+                clean_registry_title(raw_fr),
+                self.name,
+                True,
+                f"{record.ref}; released under original title (V.F.)",
+                ref=record.ref,
+                needs_corroboration=True,
+                record=record,
+                bucket="registry-original-confirmed",
+            )
+        if x and strip_articles(x_raw) in {strip_articles(o) for o in originals}:
+            return RegistryRejection(self.name, "registry-original-ambiguous", record, candidate_title=x_raw)
+        return RegistryRejection(self.name, "registry-dubbed-version", record, candidate_title=x_raw)

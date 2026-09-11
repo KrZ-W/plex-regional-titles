@@ -17,6 +17,8 @@ COUNTER_FIELDS = (
     "house_style_equivalent",
     "registry_uncorroborated",
     "registry_dubbed_version",
+    "registry_original_confirmed",
+    "registry_original_ambiguous",
     "excluded",
     "overridden",
     "same_title_skipped",
@@ -38,6 +40,8 @@ class LibrarySummary:
     house_style_equivalent: int = 0
     registry_uncorroborated: int = 0
     registry_dubbed_version: int = 0
+    registry_original_confirmed: int = 0
+    registry_original_ambiguous: int = 0
     excluded: int = 0
     overridden: int = 0
     same_title_skipped: int = 0
@@ -48,10 +52,10 @@ class LibrarySummary:
     resolved_by_source: dict[str, int] = field(default_factory=dict)
 
     def record_rejection(self, reason: str) -> None:
-        if reason == "registry-uncorroborated":
-            self.registry_uncorroborated += 1
-        elif reason == "registry-dubbed-version":
-            self.registry_dubbed_version += 1
+        """Count a registry classification (rejection reason or candidate bucket)."""
+        attr = reason.replace("-", "_")
+        if attr in COUNTER_FIELDS:
+            setattr(self, attr, getattr(self, attr) + 1)
 
     def record(self, decision: Decision) -> None:
         self.scanned += 1
@@ -96,7 +100,9 @@ class LibrarySummary:
             f"same-title-reviewed={self.same_title_reviewed} no-candidate={self.no_candidate} "
             f"no-ids={self.no_ids} errors={self.errors} "
             f"registry-uncorroborated={self.registry_uncorroborated} "
-            f"registry-dubbed-version={self.registry_dubbed_version} | resolved-by-source: {res}"
+            f"registry-dubbed-version={self.registry_dubbed_version} "
+            f"registry-original-confirmed={self.registry_original_confirmed} "
+            f"registry-original-ambiguous={self.registry_original_ambiguous} | resolved-by-source: {res}"
         )
 
 
@@ -162,7 +168,9 @@ class RunSummary:
                 f"same-title-reviewed={t['same_title_reviewed']} no-candidate={t['no_candidate']} "
                 f"no-ids={t['no_ids']} errors={t['errors']} "
                 f"registry-uncorroborated={t['registry_uncorroborated']} "
-                f"registry-dubbed-version={t['registry_dubbed_version']}"
+                f"registry-dubbed-version={t['registry_dubbed_version']} "
+                f"registry-original-confirmed={t['registry_original_confirmed']} "
+                f"registry-original-ambiguous={t['registry_original_ambiguous']}"
             )
         if self.error:
             lines.append(f"error: {self.error}")

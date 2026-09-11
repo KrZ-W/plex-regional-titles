@@ -100,6 +100,8 @@ def run_once(
             for item in plex.items(name):
                 try:
                     d = decide(item, curation, chain.resolve, settings.same_title_mode)
+                    for bucket in chain.take_buckets():
+                        lib.record_rejection(bucket)
                     for rj in chain.take_rejections():
                         lib.record_rejection(rj.reason)
                         review_queue.append((item, rj))

@@ -48,6 +48,7 @@ class Settings:
     plex_timeout: int = 60
     regie_url: str = REGIE_DEFAULT_URL
     regie_original_title_confirmation: bool = False
+    regie_confirm_min_year: int = 1990
     imdb_akas_url: str = IMDB_AKAS_DEFAULT_URL
 
     @property
@@ -157,6 +158,7 @@ def load_settings(env: dict[str, str] | None = None, known_sources: set[str] | N
 
     dataset_max_age_days = _int("DATASET_MAX_AGE_DAYS", 7, 1)
     plex_timeout = _int("PLEX_TIMEOUT", 60, 1)
+    regie_confirm_min_year = _int("REGIE_CONFIRM_MIN_YEAR", 1990, 0)
 
     raw_rate = e.get("WRITE_RATE", "5").strip()
     try:
@@ -193,5 +195,6 @@ def load_settings(env: dict[str, str] | None = None, known_sources: set[str] | N
         plex_timeout=plex_timeout,
         regie_url=e.get("REGIE_DATASET_URL", REGIE_DEFAULT_URL).strip() or REGIE_DEFAULT_URL,
         regie_original_title_confirmation=_bool(e.get("REGIE_ORIGINAL_TITLE_CONFIRMATION", "false")),
+        regie_confirm_min_year=regie_confirm_min_year,
         imdb_akas_url=e.get("IMDB_AKAS_URL", IMDB_AKAS_DEFAULT_URL).strip() or IMDB_AKAS_DEFAULT_URL,
     )

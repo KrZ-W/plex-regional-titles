@@ -168,3 +168,16 @@ def is_stripped_variant(written: str, renderings: list[str]) -> str | None:
         if r and norm(r) == key and diacritics(r) > n and (best is None or diacritics(r) > diacritics(best)):
             best = r
     return best
+
+
+_ARTICLE_TOKENS = {"le", "la", "les", "l", "un", "une", "des", "the", "a", "an"}
+
+
+def strip_articles(value: str | None) -> str:
+    """``norm`` with one leading and one trailing article token removed ('abyss the' -> 'abyss')."""
+    toks = norm(value).split()
+    if len(toks) > 1 and toks[0] in _ARTICLE_TOKENS:
+        toks = toks[1:]
+    if len(toks) > 1 and toks[-1] in _ARTICLE_TOKENS:
+        toks = toks[:-1]
+    return " ".join(toks)

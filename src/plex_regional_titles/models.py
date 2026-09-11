@@ -60,6 +60,7 @@ class Candidate:
     ref: str = ""  # registry no_film, IMDb ordering, TMDB id ... for would-apply.csv
     needs_corroboration: bool = False  # registry house-style string: must be corroborated
     record: RegistryRecord | None = None
+    bucket: str = ""  # registry classification to count, e.g. registry-original-confirmed
 
 
 @dataclass(slots=True)

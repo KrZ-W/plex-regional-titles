@@ -31,6 +31,7 @@ class SourceChain:
     def __init__(self, sources: Sequence[TitleSource]) -> None:
         self.sources = list(sources)
         self.rejections: list[RegistryRejection] = []
+        self.buckets: list[str] = []  # registry classifications seen for the current item
 
     def prepare(self) -> None:
         for src in self.sources:
@@ -45,6 +46,10 @@ class SourceChain:
 
     def take_rejections(self) -> list[RegistryRejection]:
         out, self.rejections = self.rejections, []
+        return out
+
+    def take_buckets(self) -> list[str]:
+        out, self.buckets = self.buckets, []
         return out
 
     # -- helpers ---------------------------------------------------------------------------
@@ -134,6 +139,8 @@ class SourceChain:
                 self.rejections.append(result)
                 continue
             cand = result
+            if cand.bucket:
+                self.buckets.append(cand.bucket)
             if cand.needs_corroboration:
                 text = self._corroborate(cand, item)
                 if text is None:

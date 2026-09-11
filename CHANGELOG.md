@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-09-11
+
+### Changed
+- `<X> (V.F.)` registry rows are discriminated on X instead of being rejected wholesale. X equal to
+  `TITRE` or `TITRE_ANGLAIS` (case/diacritics-insensitive, no article handling) confirms that the film
+  was released under that title: X becomes the candidate, still subject to corroboration, counted as
+  `registry-original-confirmed`. X differing only by a leading/trailing article is
+  `registry-original-ambiguous`; anything else stays `registry-dubbed-version`. Independent of
+  `REGIE_ORIGINAL_TITLE_CONFIRMATION`.
+
+### Added
+- `REGIE_CONFIRM_MIN_YEAR` (default 1990): older rows never confirm through a `(V.F.)` row; they go to
+  review as `registry-original-ambiguous`.
+- Summary counters `registry_original_confirmed` and `registry_original_ambiguous`.
+
 ## [1.2.0] - 2026-09-11
 
 ### Changed

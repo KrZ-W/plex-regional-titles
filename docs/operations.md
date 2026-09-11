@@ -60,5 +60,7 @@ Indexes are rebuilt automatically when `REGIONS` / `LANGUAGE` change.
 - *A registry title I know is right was not applied* — look for it in
   `state/would-apply-review.csv`: `registry-uncorroborated` means no source renders that
   string properly, so add it to `overrides.yaml` with its accents; `registry-dubbed-version`
-  means the row only named the dubbed version of the original title.
+  means the row named a distinct dubbed title; `registry-original-ambiguous` means the
+  registry's `(V.F.)` row differs from the original only by an article, or predates
+  `REGIE_CONFIRM_MIN_YEAR`.
 - *Kometa keeps changing titles back* — see the README section on Kometa.

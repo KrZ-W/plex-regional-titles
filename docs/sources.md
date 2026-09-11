@@ -53,18 +53,29 @@ The registry has no IMDb or TMDB ids, so matching is textual and strict:
 
 ### From a row to a candidate
 
-- `TITRE_FRANCAIS` ends in `(V.F.)`, `(V.F)`, `(V. F.)`, `(V.A.)`, `(V.O.A.)` … → the row
-  names the *dubbed or original-language version of the original title*, not a French
-  title (`ABYSS (V.F.)` is the dubbed *The Abyss*, whose Québec title is *L'abysse*).
-  Such a row is treated exactly like an empty French title (below) and never yields a
-  French candidate. `(V.O.F.)` marks an original French-language film and is a French
-  title.
-- `TITRE_FRANCAIS` empty (or a dubbed-version row) → **no hit** by default; the chain
-  continues with TMDB / IMDb, and the row is queued in `would-apply-review.csv` with
-  reason `registry-dubbed-version` when it carried a version marker. With
-  `REGIE_ORIGINAL_TITLE_CONFIRMATION=true` the stricter reading applies: the row confirms
-  the original title (`TITRE`), which is then a candidate subject to corroboration like
-  any other.
+- `TITRE_FRANCAIS` is `<X> (V.F.)` (or `(V.F)`, `(V. F.)`, `(V.A.)`, `(V.O.A.)` …): the
+  French (or original-language) version was released under title X. What that means
+  depends on X, compared with `TITRE` and `TITRE_ANGLAIS` case- and
+  diacritics-insensitively, with no article handling:
+  - X equals the original title (`G.I. JANE (V.F.)`, `ZOMBIELAND (V.F.)`, `PONYO (V.F.)`
+    against `TITRE_ANGLAIS`) → the film was released under that title. X is the
+    candidate, subject to corroboration like any other (the Plex original title is the
+    usual corroborator). Counted as `registry-original-confirmed`. Rows older than
+    `REGIE_CONFIRM_MIN_YEAR` (default 1990) are not trusted, because early records file
+    the dub under the English title (`FROM RUSSIA WITH LOVE (V.F.)` for *Bons baisers de
+    Russie*); they go to review as `registry-original-ambiguous`.
+  - X differs from the original title only by a leading or trailing article
+    (`ABYSS (V.F.)` against `ABYSS, THE`) → ambiguous: no candidate, queued as
+    `registry-original-ambiguous`.
+  - X is a distinct title (`WW84 (V.F.)`, `EUROPEAN VACATION (V.F.)`) → the row names a
+    distinct dubbed title: no candidate, queued as `registry-dubbed-version`.
+
+  This path is independent of `REGIE_ORIGINAL_TITLE_CONFIRMATION`. `(V.O.F.)` marks an
+  original French-language film and is a French title.
+- `TITRE_FRANCAIS` empty → **no hit** by default; the chain continues with TMDB / IMDb.
+  With `REGIE_ORIGINAL_TITLE_CONFIRMATION=true` the stricter reading applies: the row
+  confirms the original title (`TITRE`), which is then a candidate subject to
+  corroboration like any other.
 - Otherwise the cleaned `TITRE_FRANCAIS` is the candidate, subject to corroboration.
 
 ### Corroboration (the rule that decides what gets written)

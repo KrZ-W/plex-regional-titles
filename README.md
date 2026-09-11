@@ -84,6 +84,7 @@ All configuration is by environment variable.
 | `PLEX_TIMEOUT` | `60` | Plex request timeout, seconds. |
 | `CONFIG_DIR` | `/config` | Where config, cache, state and log live. |
 | `REGIE_DATASET_URL` | Données Québec CSV | Override the registry CSV URL. |
+| `REGIE_CONFIRM_MIN_YEAR` | `1990` | Registry rows older than this never confirm an original title through a `<X> (V.F.)` row (early records file the dub under the English title); they go to review as `registry-original-ambiguous`. |
 | `REGIE_ORIGINAL_TITLE_CONFIRMATION` | `false` | Stricter reading of the registry: a row with an empty French title confirms the original title. Off by default because the registry classifies the *submitted version*, and an empty French title often means an original-version-only screening (Darjeeling Limited), not a release under the original title. With it off such rows are no hit and the chain continues. |
 | `IMDB_AKAS_URL` | `https://datasets.imdbws.com/title.akas.tsv.gz` | Override the IMDb dataset URL. |
 
@@ -96,7 +97,7 @@ All configuration is by environment variable.
 | `review.csv` | Written when `SAME_TITLE_MODE=review`: ambiguous items with current title, candidate, ids and source. Never applied. |
 | `cache/` | Downloaded datasets, SQLite indexes, TMDB response cache. Safe to delete. |
 | `state/last-run.json` | Summary of the last run (used by the container healthcheck). |
-| `state/would-apply-review.csv` | Registry hits that were not written (`registry-uncorroborated`, `registry-dubbed-version`) with the raw registry row, year, `NO_FILM`, current title and regional akas. Adjudicate here; answer through `overrides.yaml`. |
+| `state/would-apply-review.csv` | Registry hits that were not written (`registry-uncorroborated`, `registry-dubbed-version`, `registry-original-ambiguous`) with the raw registry row, year, `NO_FILM`, current title and regional akas. Adjudicate here; answer through `overrides.yaml`. |
 | `state/would-apply.csv` | Written when `DRY_RUN=true` or `SAME_TITLE_MODE=review`: one row per would-be title write (ids, current title, candidate, source, registry reference, cascade step). Review it before the first live run. |
 | `examples/` | Seed curation files copied in by the image at start (`exclusions.quebec.txt`, `overrides.quebec.yaml`). Never loaded automatically. |
 | `log/` | Rotating log file. |
@@ -165,7 +166,7 @@ Every run logs a per-library line and writes `state/last-run.json`:
 ```
 
 Counters: `scanned`, `applied` (with a by-source breakdown), `already_correct`,
-`house_style_equivalent` (subset of already-correct decided by the house-style rule), `registry_uncorroborated`, `registry_dubbed_version`, `excluded`, `overridden`, `same_title_skipped`, `same_title_reviewed`,
+`house_style_equivalent` (subset of already-correct decided by the house-style rule), `registry_uncorroborated`, `registry_dubbed_version`, `registry_original_confirmed`, `registry_original_ambiguous`, `excluded`, `overridden`, `same_title_skipped`, `same_title_reviewed`,
 `no_candidate`, `no_ids`, `errors`, plus `resolved_by_source` (which source
 produced the candidate, whatever the outcome).
 

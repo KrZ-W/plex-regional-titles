@@ -2,7 +2,7 @@ import pytest
 import requests
 
 from plex_regional_titles.download import write_meta
-from plex_regional_titles.models import DatasetUnavailable, Kind, RegistryRejection
+from plex_regional_titles.models import DatasetUnavailable, Kind
 from plex_regional_titles.sources.chain import SourceChain
 from plex_regional_titles.sources.regie import (
     RegieDuCinemaRegistry,
@@ -108,18 +108,20 @@ def test_vf_suffix_means_dubbed_version_of_original_title(regie):
     assert c and c.title == "G.I. JANE" and c.needs_corroboration and "original title" in c.note
 
 
-def test_vf_suffix_is_a_dubbed_version_rejection_by_default(settings):
+def test_vf_row_equal_to_original_confirms_it_and_needs_corroboration(settings):
     write_regie_csv(settings.cache_dir / "regie.csv")
     write_meta(settings.cache_dir / "regie.csv", {"checked_at": 9e12})
-    src = RegieDuCinemaRegistry(settings, session=OfflineSession())
+    src = RegieDuCinemaRegistry(settings, session=OfflineSession())  # knob off (default)
     src.prepare()
-    r = src.resolve(make_item("À armes égales", "G.I. Jane", 1997))
-    assert isinstance(r, RegistryRejection) and r.reason == "registry-dubbed-version"
-    assert r.record.regional_title == "G.I. JANE (V.F.)" and r.record.ref == "no_film=106395"
-    # never a French candidate: the chain moves on and queues the rejection
+    c = src.resolve(make_item("À armes égales", "G.I. Jane", 1997))
+    assert c.title == "G.I. JANE" and c.needs_corroboration and c.bucket == "registry-original-confirmed"
     chain = SourceChain([src, StaticSource("imdb", False, "Soldat Jane")])
     c = chain.resolve(make_item("À armes égales", "G.I. Jane", 1997))
-    assert c.source == "imdb" and [r.reason for r in chain.take_rejections()] == ["registry-dubbed-version"]
+    assert (
+        c.source == "regie"
+        and c.title == "G.I. Jane"
+        and chain.take_buckets() == ["registry-original-confirmed"]
+    )
     src.close()
 
 
